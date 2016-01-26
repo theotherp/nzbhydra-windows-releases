@@ -1,0 +1,23 @@
+<h3>NZB Hydra</h3>
+
+Current version: {{ currentVersion }}
+<br>
+Latest version: {{ repVersion }}
+<br>
+<h4 ng-if="updateAvailable">Considering we're still in alpha you might want to do a backup of your .cfg and .db files first.</h4>
+<button ng-if="updateAvailable" class="btn btn-default" type="button" ng-click="update()">Update!</button>
+<span ng-if="!updateAvailable">You're up to date!</span>
+
+
+<br>
+Sources: <a href="https://github.com/theotherp/nzbhydra" target="_blank">https://github.com/theotherp/nzbhydra</a>
+<br><br>
+Donations welcome.
+<br>Bitcoin: 13x4cfm5BNzedsSqdPcexUhAF3cP8LYrsk
+
+<br><br>
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+<a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a>
