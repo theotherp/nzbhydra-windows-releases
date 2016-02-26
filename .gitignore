@@ -1,6 +1,8 @@
 /.vagrant
 Vagrantfile
 /.tmp
+/backup
+/debug
 /dist
 /build
 /flask_session
@@ -11,7 +13,7 @@ Vagrantfile
 /node_modules
 /bower_components
 *.db*
-/*.cfg
+*.cfg
 *.bak
 *.log
 **/*.pyc

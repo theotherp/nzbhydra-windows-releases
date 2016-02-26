@@ -4,7 +4,7 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
 
     blockUIConfig.autoBlock = false;
     $urlMatcherFactoryProvider.strictMode(false);
-    
+
     $stateProvider
         .state("search.results", {
             templateUrl: "static/html/states/search-results.html",
@@ -34,7 +34,7 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }] 
+                }]
             }
         })
         .state("config.auth", {
@@ -44,6 +44,9 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             resolve: {
                 config: ['ConfigService', function (ConfigService) {
                     return ConfigService.get();
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
                 }]
             }
         })
@@ -54,6 +57,9 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             resolve: {
                 config: ['ConfigService', function (ConfigService) {
                     return ConfigService.get();
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
                 }]
             }
         })
@@ -64,6 +70,9 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             resolve: {
                 config: ['ConfigService', function (ConfigService) {
                     return ConfigService.get();
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
                 }]
             }
         })
@@ -74,6 +83,9 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             resolve: {
                 config: ['ConfigService', function (ConfigService) {
                     return ConfigService.get();
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
                 }]
             }
         })
@@ -84,6 +96,9 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             resolve: {
                 config: ['ConfigService', function (ConfigService) {
                     return ConfigService.get();
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
                 }]
             }
         })
@@ -94,6 +109,9 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             resolve: {
                 config: ['ConfigService', function (ConfigService) {
                     return ConfigService.get();
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
                 }]
             }
         })
@@ -102,8 +120,11 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             templateUrl: "static/html/states/stats.html",
             controller: "StatsController",
             resolve: {
-                stats: ['StatsService', function(StatsService) {
+                stats: ['StatsService', function (StatsService) {
                     return StatsService.get();
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
                 }]
             }
         })
@@ -114,6 +135,9 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             resolve: {
                 stats: ['StatsService', function (StatsService) {
                     return StatsService.get();
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
                 }]
             }
         })
@@ -124,6 +148,9 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             resolve: {
                 stats: ['StatsService', function (StatsService) {
                     return StatsService.get();
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
                 }]
             }
         })
@@ -134,6 +161,9 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             resolve: {
                 stats: ['StatsService', function (StatsService) {
                     return StatsService.get();
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
                 }]
             }
         })
@@ -144,6 +174,9 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             resolve: {
                 foobar: ['$http', function ($http) {
                     return $http.get("internalapi/askforadmin")
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
                 }]
             }
         })
@@ -154,6 +187,9 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             resolve: {
                 foobar: ['$http', function ($http) {
                     return $http.get("internalapi/askforadmin")
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
                 }]
             }
         })
@@ -164,6 +200,22 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             resolve: {
                 foobar: ['$http', function ($http) {
                     return $http.get("internalapi/askforadmin")
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
+                }]
+            }
+        })
+        .state("system.backup", {
+            url: "/backup",
+            templateUrl: "static/html/states/system.html",
+            controller: "SystemController",
+            resolve: {
+                foobar: ['$http', function ($http) {
+                    return $http.get("internalapi/askforadmin")
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
                 }]
             }
         })
@@ -174,6 +226,22 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             resolve: {
                 foobar: ['$http', function ($http) {
                     return $http.get("internalapi/askforadmin")
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
+                }]
+            }
+        })
+        .state("system.bugreport", {
+            url: "/bugreport",
+            templateUrl: "static/html/states/system.html",
+            controller: "SystemController",
+            resolve: {
+                foobar: ['$http', function ($http) {
+                    return $http.get("internalapi/askforadmin")
+                }],
+                safeConfig: ['ConfigService', function (ConfigService) {
+                    return ConfigService.getSafe();
                 }]
             }
         })
@@ -240,6 +308,24 @@ nzbhydraapp.factory('focus', ["$rootScope", "$timeout", function ($rootScope, $t
 
 nzbhydraapp.filter('unsafe', ["$sce", function ($sce) {
     return $sce.trustAsHtml;
+}]);
+
+nzbhydraapp.config(["$provide", function ($provide) {
+    $provide.decorator("$exceptionHandler", ['$delegate', '$injector', function ($delegate, $injector) {
+        return function (exception, cause) {
+            $delegate(exception, cause);
+            try {
+                var stack = exception.stack.split('\n').map(function (line) {
+                    return line.trim();
+                });
+                stack = stack.join("\n");
+                    $injector.get("$http").put("internalapi/logerror", {error: stack, cause: angular.isDefined(cause) ? cause.toString() : "No known cause"});
+              
+            } catch (e) {
+                console.error("Unable to log JS exception to server", e);
+            }
+        };
+    }]);
 }]);
 
 _.mixin({
@@ -686,6 +772,26 @@ function cfgFormEntry() {
 }
 angular
     .module('nzbhydraApp')
+    .directive('hydrabackup', hydrabackup);
+
+function hydrabackup() {
+    controller.$inject = ["$scope", "BackupService"];
+    return {
+        templateUrl: 'static/html/directives/backup.html',
+        controller: controller
+    };
+
+    function controller($scope, BackupService) {
+        BackupService.getBackupsList().then(function(backups) {
+            $scope.backups = backups;
+        });
+        
+    }
+}
+
+
+angular
+    .module('nzbhydraApp')
     .directive('addableNzb', addableNzb);
 
 function addableNzb() {
@@ -704,19 +810,18 @@ function addableNzb() {
 
     function controller($scope, ConfigService, NzbDownloadService, growl) {
         $scope.classname = "";
+        var settings = ConfigService.getSafe();
         
-        ConfigService.getSafe().then(function (settings) {
-            $scope.downloader = settings.downloader.downloader;
-            if ($scope.downloader != "none") {
-                $scope.enabled = true;
-                $scope.classname = $scope.downloader == "sabnzbd" ? "sabnzbd" : "nzbget";
-            } else {
-                $scope.enabled = false;
-            }
-            
-        });
-        
-        $scope.add = function() {
+        $scope.downloader = settings.downloader.downloader;
+        if ($scope.downloader != "none") {
+            $scope.enabled = true;
+            $scope.classname = $scope.downloader == "sabnzbd" ? "sabnzbd" : "nzbget";
+        } else {
+            $scope.enabled = false;
+        }
+
+
+        $scope.add = function () {
             $scope.classname = "nzb-spinning";
             NzbDownloadService.download([{"indexerguid": $scope.indexerguid, "title": $scope.title, "indexer": $scope.indexer, "dbsearchid": $scope.dbsearchid}]).then(function (response) {
                 if (response.data.success) {
@@ -725,7 +830,7 @@ function addableNzb() {
                     $scope.classname = $scope.downloader == "sabnzbd" ? "sabnzbd-error" : "nzbget-error";
                     growl.error("Unable to add NZB. Make sure the downloader is running and properly configured.");
                 }
-            }, function() {
+            }, function () {
                 $scope.classname = $scope.downloader == "sabnzbd" ? "sabnzbd-error" : "nzbget-error";
                 growl.error("An unexpected error occurred while trying to contact NZB Hydra or add the NZB.");
             })
@@ -895,6 +1000,14 @@ function SystemController($scope, $state, growl, RestartService, NzbHydraControl
         },
         {
             active: false,
+            state: 'system.backup'
+        },
+        {
+            active: false,
+            state: 'system.bugreport'
+        },
+        {
+            active: false,
             state: 'system.about'
         }
     ];
@@ -1051,10 +1164,9 @@ function SearchService($http) {
         
 
         uri.addQuery("category", category);
-        uri = uri.toString();
-        console.log("Calling " + uri);
+        console.log("Calling " + uri.toString());
         lastExecutedQuery = uri;
-        return $http.get(uri).then(processData);
+        return $http.get(uri.toString()).then(processData);
 
     }
 
@@ -1063,7 +1175,7 @@ function SearchService($http) {
         lastExecutedQuery.addQuery("offset", offset);
 
         console.log("Calling " + lastExecutedQuery);
-        return $http.get(lastExecutedQuery).then(processData);
+        return $http.get(lastExecutedQuery.toString()).then(processData);
     }
 
     function processData(response) {
@@ -1094,7 +1206,7 @@ angular
     .controller('SearchResultsController', SearchResultsController);
 
 //SearchResultsController.$inject = ['blockUi'];
-function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, SearchService,growl, NzbDownloadService) {
+function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, growl, NzbDownloadService, SearchService, ConfigService) {
 
     $scope.sortPredicate = "epoch";
     $scope.sortReversed = true;
@@ -1172,11 +1284,15 @@ function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, Se
     
     function sortAndFilter(results) {
         $scope.countFilteredOut = 0;
+        var safeConfig = ConfigService.getSafe();
         function filterByAgeAndSize(item) {
             var filterOut = !(_.isNumber($stateParams.minsize) && item.size / 1024 / 1024 < $stateParams.minsize)
                 && !(_.isNumber($stateParams.maxsize) && item.size / 1024 / 1024 > $stateParams.maxsize)
                 && !(_.isNumber($stateParams.minage) && item.age_days < $stateParams.minage)
-                && !(_.isNumber($stateParams.maxage) && item.age_days > $stateParams.maxage);
+                && !((_.isNumber($stateParams.maxage) && item.age_days > $stateParams.maxage)
+                    || (_.isNumber(safeConfig.searching.maxAge) && item.age_days > safeConfig.searching.maxAge)
+                        
+                );
             if (!filterOut) {
                 $scope.countFilteredOut++;
             }
@@ -1319,7 +1435,7 @@ function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, Se
     }
 
 }
-SearchResultsController.$inject = ["$stateParams", "$scope", "$q", "$timeout", "blockUI", "SearchService", "growl", "NzbDownloadService"];
+SearchResultsController.$inject = ["$stateParams", "$scope", "$q", "$timeout", "blockUI", "growl", "NzbDownloadService", "SearchService", "ConfigService"];
 angular
     .module('nzbhydraApp')
     .controller('SearchController', SearchController);
@@ -1362,7 +1478,7 @@ function SearchController($scope, $http, $stateParams, $state, SearchService, fo
 
     $scope.showIndexers = {};
 
-    var safeConfig;
+    var safeConfig = ConfigService.getSafe();
 
 
     $scope.typeAheadWait = 300;
@@ -1542,26 +1658,21 @@ function SearchController($scope, $http, $stateParams, $state, SearchService, fo
         
     }
 
-    ConfigService.getSafe().then(function (cfg) {
-        safeConfig = cfg;
-        $scope.availableIndexers = _.chain(cfg.indexers).filter(function (indexer) {
-            return indexer.enabled && indexer.showOnSearch;
-        }).sortBy("name")
-            .map(function (indexer) {
-            return {name: indexer.name, activated: isIndexerPreselected(indexer)};
-        }).value();
+    
+    $scope.availableIndexers = _.chain(safeConfig.indexers).filter(function (indexer) {
+        return indexer.enabled && indexer.showOnSearch;
+    }).sortBy("name")
+        .map(function (indexer) {
+        return {name: indexer.name, activated: isIndexerPreselected(indexer)};
+    }).value();
         
-    });
+    
 
     if ($scope.mode) {
         console.log("Starting search in newly loaded search controller");
         $scope.startSearch();
     }
-
-
     
-
-
 }
 SearchController.$inject = ["$scope", "$http", "$stateParams", "$state", "SearchService", "focus", "ConfigService", "blockUI"];
 
@@ -1634,46 +1745,39 @@ angular
     .factory('NzbDownloadService', NzbDownloadService);
 
 function NzbDownloadService($http, ConfigService, CategoriesService) {
-    
+
     var service = {
-        download: download 
+        download: download
     };
-    
+
     return service;
-    
 
 
     function sendNzbAddCommand(items, category) {
-        console.log("Now add nzb with category " + category);        
+        console.log("Now add nzb with category " + category);
         return $http.put("internalapi/addnzbs", {items: angular.toJson(items), category: category});
     }
 
-    function download (items) {
-        return ConfigService.getSafe().then(function (settings) {
+    function download(items) {
+        var settings = ConfigService.getSafe();
 
-            var category;
-            if (settings.downloader.downloader == "nzbget") {
-                category = settings.downloader.nzbget.defaultCategory
-            } else {
-                category = settings.downloader.sabnzbd.defaultCategory
-            }
+        var category;
+        if (settings.downloader.downloader == "nzbget") {
+            category = settings.downloader.nzbget.defaultCategory
+        } else {
+            category = settings.downloader.sabnzbd.defaultCategory
+        }
 
-            if (_.isUndefined(category) || category == "" || category == null) {
-                return CategoriesService.openCategorySelection().then(function (category) {
-                    return sendNzbAddCommand(items, category)
-                }, function(error) {
-                    throw error;
-                });
-            } else {
+        if (_.isUndefined(category) || category == "" || category == null) {
+            return CategoriesService.openCategorySelection().then(function (category) {
                 return sendNzbAddCommand(items, category)
-            }
-
-        });
-
-
+            }, function (error) {
+                throw error;
+            });
+        } else {
+            return sendNzbAddCommand(items, category)
+        }
     }
-
-    
 }
 NzbDownloadService.$inject = ["$http", "ConfigService", "CategoriesService"];
 
@@ -1771,11 +1875,9 @@ function GeneralModalService() {
         params["resolve"] = 
         {
             data: function () {
-                console.log(data);
                 return data;
             }
         };
-        console.log(params);
         
         var modalInstance = $uibModal.open(params);
 
@@ -1803,8 +1905,7 @@ nzbhydraapp.factory('RequestsErrorHandler',  ["$q", "growl", "blockUI", "General
         // --- Response interceptor for handling errors generically ---
         responseError: function (rejection) {
             blockUI.reset();
-            var shouldHandle = (rejection && rejection.config && rejection.config.headers && rejection.config.headers[HEADER_NAME]);
-            
+            var shouldHandle = (rejection && rejection.config && rejection.config.headers && rejection.config.headers[HEADER_NAME] && !rejection.config.url.contains("logerror"));
             if (shouldHandle) {
                 var message = "An error occured :<br>" + rejection.status + ": " + rejection.statusText;
 
@@ -1813,6 +1914,8 @@ nzbhydraapp.factory('RequestsErrorHandler',  ["$q", "growl", "blockUI", "General
                 }
                 GeneralModalService.open(message);
 
+            } else if (rejection && rejection.config && rejection.config.headers && rejection.config.headers[HEADER_NAME] && rejection.config.url.contains("logerror")) {
+                console.log("Not handling connection error while sending exception to server");
             }
 
             return $q.reject(rejection);
@@ -1996,7 +2099,6 @@ angular
 
                 var testButton = "#button-test-connection-" + $scope.uniqueId;
                 var testMessage = "#message-test-connection-" + $scope.uniqueId;
-                console.log($scope);
 
                 function showSuccess() {
                     angular.element(testButton).removeClass("btn-default");
@@ -2359,7 +2461,7 @@ angular
 function ConfigService($http, $q, $cacheFactory) {
 
     var cache = $cacheFactory("nzbhydra");
-    
+
     return {
         set: set,
         get: get,
@@ -2367,8 +2469,8 @@ function ConfigService($http, $q, $cacheFactory) {
         invalidateSafe: invalidateSafe,
         maySeeAdminArea: maySeeAdminArea
     };
-    
-    
+
+
     function set(newConfig) {
         $http.put('internalapi/setsettings', newConfig)
             .then(function (successresponse) {
@@ -2387,22 +2489,24 @@ function ConfigService($http, $q, $cacheFactory) {
             });
             cache.put("config", config);
         }
-        
+
         return config;
     }
 
     function getSafe() {
-            var safeconfig = cache.get("safeconfig");
-            if (angular.isUndefined(safeconfig)) {
-                safeconfig = $http.get('internalapi/getsafeconfig').then(function(data) {
-                    return data.data;
-                });
-                cache.put("safeconfig", safeconfig);
-            }
-        
+        var safeconfig = cache.get("safeconfig");
+        if (angular.isDefined(safeconfig)) {
             return safeconfig;
+        }
+        
+        return $http.get('internalapi/getsafeconfig').then(function (data) {
+            cache.put("safeconfig", data.data);
+            return data.data;
+        });
+
+
     }
-    
+
     function invalidateSafe() {
         cache.remove("safeconfig");
     }
@@ -2975,6 +3079,16 @@ function ConfigFields() {
                                 label: 'Ignore results with ...',
                                 placeholder: 'separate, with, commas, like, this',
                                 help: "Results with any of these words in the title will be ignored"
+                            }
+                        },
+
+                        {
+                            key: 'maxAge',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'number',
+                                label: 'Maximum results age',
+                                help: 'Results older than this are ignored. Can be overwritten per search.'
                             }
                         },
 
@@ -3607,7 +3721,7 @@ function ConfigFields() {
                         altLegendText: 'Authless',
                         fields: [
                             {
-                                key: 'name',
+                                key: 'username',
                                 type: 'horizontalInput',
                                 templateOptions: {
                                     type: 'text',
@@ -3838,6 +3952,8 @@ function CategoriesService($http, $q, $uibModal) {
 
         return loadAll().then(function (categories) {
             return categories.categories;
+        }, function (error) {
+            throw error;
         });
     }
 
@@ -3879,4 +3995,23 @@ angular
         $uibModalInstance.close($scope);
     }
 }]);
+angular
+    .module('nzbhydraApp')
+    .factory('BackupService', BackupService);
+
+function BackupService($http) {
+
+    return {
+        getBackupsList: getBackupsList
+    };
+    
+
+    function getBackupsList() {
+        return $http.get('internalapi/getbackups').then(function (data) {
+            return data.data.backups;
+        });
+    }
+
+}
+BackupService.$inject = ["$http"];
 //# sourceMappingURL=nzbhydra.js.map
