@@ -315,12 +315,14 @@ nzbhydraapp.config(["$provide", function ($provide) {
         return function (exception, cause) {
             $delegate(exception, cause);
             try {
+                console.log(exception);
                 var stack = exception.stack.split('\n').map(function (line) {
                     return line.trim();
                 });
                 stack = stack.join("\n");
-                    $injector.get("$http").put("internalapi/logerror", {error: stack, cause: angular.isDefined(cause) ? cause.toString() : "No known cause"});
-              
+                $injector.get("$http").put("internalapi/logerror", {error: stack, cause: angular.isDefined(cause) ? cause.toString() : "No known cause"});
+                
+
             } catch (e) {
                 console.error("Unable to log JS exception to server", e);
             }
@@ -937,20 +939,26 @@ angular
     .module('nzbhydraApp')
     .controller('UpdateFooterController', UpdateFooterController);
 
-function UpdateFooterController($scope, UpdateService) {
+function UpdateFooterController($scope, $http, UpdateService) {
 
     $scope.updateAvailable = false;
     
-    UpdateService.getVersions().then(function(data) {
-        $scope.currentVersion = data.data.currentVersion;
-        $scope.repVersion = data.data.repVersion;
-        $scope.updateAvailable = data.data.updateAvailable;
-        if ($scope.repVersion > $scope.currentVersion) {
-            UpdateService.getChangelog().then(function (data) {
-                $scope.changelog = data.data.changelog;
-            })
-        } 
+    $http.get("internalapi/mayseeadminarea").then(function(data) {
+       if (data.data.mayseeadminarea) {
+           UpdateService.getVersions().then(function (data) {
+               $scope.currentVersion = data.data.currentVersion;
+               $scope.repVersion = data.data.repVersion;
+               $scope.updateAvailable = data.data.updateAvailable;
+               if ($scope.repVersion > $scope.currentVersion) {
+                   UpdateService.getChangelog().then(function (data) {
+                       $scope.changelog = data.data.changelog;
+                   })
+               }
+           });
+       } 
     });
+    
+    
     
 
     $scope.update = function () {
@@ -962,7 +970,7 @@ function UpdateFooterController($scope, UpdateService) {
     }
 
 }
-UpdateFooterController.$inject = ["$scope", "UpdateService"];
+UpdateFooterController.$inject = ["$scope", "$http", "UpdateService"];
 
 angular
     .module('nzbhydraApp')
@@ -1339,8 +1347,6 @@ function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, gr
         var filtered = _.chain(results)
             //Remove elements of which the indexer is currently hidden    
             .filter(getItemIndexerDisplayState)
-            //and which were not filtered by the indexers (because they don't support queries with min/max size/age)
-            .filter(filterByAgeAndSize)
             //Make groups of results with the same title    
             .groupBy(getCleanedTitle)
             //For every title group make subgroups of duplicates and sort the group    
@@ -1369,21 +1375,12 @@ function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, gr
 
     $scope.loadMore = loadMore;
     function loadMore() {
-        console.log("Loading more result withs offset " + $scope.resultsCount);
-
         startBlocking("Loading more results...").then(function () {
             SearchService.loadMore($scope.resultsCount).then(function (data) {
-                console.log("Returned more results:");
-                console.log(data.results);
-                console.log($scope.results);
-                console.log("Total: " + data.total);
                 $scope.results = $scope.results.concat(data.results);
                 $scope.filteredResults = sortAndFilter($scope.results);
                 $scope.total = data.total;
                 $scope.resultsCount += data.resultsCount;
-                console.log("Results count: " + $scope.resultsCount);
-                console.log("Total results in $scope.results: " + $scope.results.length);
-
                 stopBlocking();
             });
         });
@@ -1417,7 +1414,6 @@ function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, gr
                 return {"indexerguid": value.indexerguid, "title": value.title, "indexer": value.indexer, "dbsearchid": value.dbsearchid}
             });
 
-            console.log(values);
             NzbDownloadService.download(values).then(function (response) {
                 if (response.data.success) {
                     growl.info("Successfully added " + response.data.added + " of " + response.data.of + " NZBs");
@@ -2771,7 +2767,7 @@ function ConfigFields() {
                 }
                 if (rootModel.auth.users.length > 0) {
                     return _.any(rootModel.auth.users, function (user) {
-                        return scope.model.name != user.name && user.maySeeAdmin;
+                        return scope.model.username != user.username && user.maySeeAdmin;
                     })
                 }
                 return true;
@@ -2842,7 +2838,7 @@ function ConfigFields() {
                                 type: 'text',
                                 label: 'URL base',
                                 placeholder: '/nzbhydra',
-                                help: 'Set when using an external proxy'
+                                help: 'Set when using an external proxy. Call using a trailing slash, e.g. http://www.domain.com/nzbhydra/'
                             },
                             validators: {
                                 urlBase: regexValidator(/^\/[\w\/]*$/, "Base URL needs to start with a slash and must not end with one")
@@ -3088,7 +3084,10 @@ function ConfigFields() {
                             templateOptions: {
                                 type: 'number',
                                 label: 'Maximum results age',
-                                help: 'Results older than this are ignored. Can be overwritten per search.'
+                                help: 'Results older than this are ignored. Can be overwritten per search.',
+                                addonRight: {
+                                    text: 'days'
+                                }
                             }
                         },
 
@@ -3761,7 +3760,7 @@ function ConfigFields() {
 
                         ],
                         defaultModel: {
-                            name: null,
+                            username: null,
                             password: null,
                             maySeeStats: true,
                             maySeeAdmin: true
