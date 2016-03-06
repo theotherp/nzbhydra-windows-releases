@@ -1,6 +1,9 @@
 # NZB Hydra changelog
 
 ----------
+### 0.0.1a79
+Added: Support for book searches via API.
+
 ### 0.0.1a78
 Added: Prefix terms in query with "--" to exclude them. Works in addition to global ignored words. 
 
