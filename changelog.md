@@ -1,6 +1,31 @@
 # NZB Hydra changelog
 
 ----------
+### 0.0.1a84
+Added: Add NZB Finder to presets.
+
+Added: Support JSON output for API search results.
+
+Added: Globally define words of which at least one needs to be contained in displayed results.
+
+### 0.0.1a83
+Added: Link to TVDB pages from search history for TVRage ID based searches.
+
+Fixed: Error when searching movies with titles containing special characters using the frontend.
+
+### 0.0.1a82
+Fixed: Error in search because I wrote code while too tired and checked in without testing. Shame on me.   
+
+### 0.0.1a81
+Fixed: Binsearch results where age could not be parsed caused problems, will be ignored.
+ 
+Fixed: Leave settings.cfg untouched if an error occurrs instead of writing an empty file. 
+
+### 0.0.1a80
+Fixed: Don't crash whole app if exception in search thread is thrown.
+ 
+Fixed: Make sure that searches are not executed with empty converted search IDs. This would sometimes cause false positives being returned.
+
 ### 0.0.1a79
 Added: Support for book searches via API. Because a lot of newznab indexers don't support book queries I decided to use query generation instead, 
 meaning I do a raw query with the supplied author and/or title in the ebook categories. This might return some/a lot of false positives, but it's 
