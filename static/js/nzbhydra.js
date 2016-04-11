@@ -1,4 +1,4 @@
-var nzbhydraapp = angular.module('nzbhydraApp', ['angular-loading-bar', 'cgBusy', 'ngAnimate', 'ui.bootstrap', 'ipCookie', 'angular-growl', 'angular.filter', 'filters', 'ui.router', 'blockUI', 'mgcrea.ngStrap', 'angularUtils.directives.dirPagination', 'nvd3', 'formly', 'formlyBootstrap', 'frapontillo.bootstrap-switch', 'ui.select', 'ngSanitize', 'checklist-model', 'ngAria', 'ngMessages']);
+var nzbhydraapp = angular.module('nzbhydraApp', ['angular-loading-bar', 'cgBusy', 'ngAnimate', 'ui.bootstrap', 'ipCookie', 'angular-growl', 'angular.filter', 'filters', 'ui.router', 'blockUI', 'mgcrea.ngStrap', 'angularUtils.directives.dirPagination', 'nvd3', 'formly', 'formlyBootstrap', 'frapontillo.bootstrap-switch', 'ui.select', 'ngSanitize', 'checklist-model', 'ngAria', 'ngMessages', 'ui.router.title']);
 
 angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$locationProvider", "blockUIConfig", "$urlMatcherFactoryProvider", function ($stateProvider, $urlRouterProvider, $locationProvider, blockUIConfig, $urlMatcherFactoryProvider) {
 
@@ -22,6 +22,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 maxsize: undefined,
                 minage: undefined,
                 maxage: undefined
+            }, resolve: {
+                $title: function () {
+                    return "Search results"
+                }
             }
         })
         .state("config", {
@@ -34,7 +38,8 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function(){return "Config"}
             }
         })
         .state("config.auth", {
@@ -47,7 +52,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "Config (Auth)"
+                }
             }
         })
         .state("config.searching", {
@@ -60,7 +68,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "Config (Searching)"
+                }
             }
         })
         .state("config.downloader", {
@@ -73,7 +84,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "Config (Downloader)"
+                }
             }
         })
         .state("config.indexers", {
@@ -86,7 +100,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "Config (Indexers)"
+                }
             }
         })
         .state("config.system", {
@@ -99,7 +116,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "System"
+                }
             }
         })
         .state("config.log", {
@@ -112,7 +132,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "System (Log)"
+                }
             }
         })
         .state("stats", {
@@ -125,7 +148,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "Stats"
+                }
             }
         })
         .state("stats.indexers", {
@@ -138,7 +164,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "Stats (Indexers)"
+                }
             }
         })
         .state("stats.searches", {
@@ -151,7 +180,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "Stats (Searches)"
+                }
             }
         })
         .state("stats.downloads", {
@@ -164,7 +196,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "Stats (Downloads)"
+                }
             }
         })
         .state("system", {
@@ -177,7 +212,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "System"
+                }
             }
         })
         .state("system.updates", {
@@ -190,7 +228,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "System (Updates)"
+                }
             }
         })
         .state("system.log", {
@@ -203,7 +244,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "System (Log)"
+                }
             }
         })
         .state("system.backup", {
@@ -216,7 +260,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "System (Backup)"
+                }
             }
         })
         .state("system.about", {
@@ -229,7 +276,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "System (About)"
+                }
             }
         })
         .state("system.bugreport", {
@@ -242,7 +292,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
                 }],
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "System (Bug report)"
+                }
             }
         })
         .state("search", {
@@ -252,7 +305,10 @@ angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$
             resolve: {
                 safeConfig: ['ConfigService', function (ConfigService) {
                     return ConfigService.getSafe();
-                }]
+                }],
+                $title: function () {
+                    return "Search"
+                }
             }
         })
     ;
@@ -1066,7 +1122,8 @@ function StatsController($scope, stats, $state) {
     $scope.avgResponseTimes = stats.avgResponseTimes;
     $scope.avgIndexerSearchResultsShares = stats.avgIndexerSearchResultsShares;
     $scope.avgIndexerAccessSuccesses = stats.avgIndexerAccessSuccesses;
-
+    $scope.indexerDownloadShares = stats.indexerDownloadShares;
+    
 
     $scope.tabs = [
         {
@@ -2058,6 +2115,15 @@ angular
         });
 
         formlyConfigProvider.setType({
+            name: 'timeOfDay',
+            extends: 'horizontalInput',
+            controller: ['$scope', function ($scope) {
+                console.log($scope);
+                $scope.model[$scope.options.key] = new Date($scope.model[$scope.options.key]);
+            }]
+        });
+
+        formlyConfigProvider.setType({
             name: 'percentInput',
             template: [
                 '<input type="number" class="form-control" placeholder="Percent" ng-model="model[options.key]" ng-pattern="/^[0-9]+(\.[0-9]{1,2})?$/" step="0.01" required />'
@@ -2666,6 +2732,59 @@ function ConfigFields() {
             }
         ]);
 
+        if (testtype == "newznab") {
+            fieldset.push(
+                {
+                    key: 'hitLimit',
+                    type: 'horizontalInput',
+                    hideExpression: '!model.enabled',
+                    templateOptions: {
+                        type: 'number',
+                        label: 'API hit limit',
+                        help: 'Maximum number of API hits since "API hit reset time"'
+                    }
+                }
+            );
+            fieldset.push(
+                {
+                    key: 'hitLimitResetTime',
+                    type: 'timeOfDay',
+                    hideExpression: '!model.enabled || !model.hitLimit',
+                    templateOptions: {
+                        type: 'time',
+                        label: 'API hit reset time',
+                        help: 'Local time at which the API hit counter is reset'
+                    }
+                });
+            fieldset.push(
+                {
+                    key: 'username',
+                    type: 'horizontalInput',
+                    hideExpression: '!model.enabled',
+                    templateOptions: {
+                        type: 'text',
+                        required: false,
+                        label: 'Username',
+                        help: 'Only needed if indexer requires HTTP auth for API access (rare)'
+                    }
+                }
+            );
+            fieldset.push(
+                {
+                    key: 'password',
+                    type: 'horizontalInput',
+                    hideExpression: '!model.enabled || !model.username',
+                    templateOptions: {
+                        type: 'text',
+                        required: false,
+                        label: 'Password',
+                        help: 'Only needed if indexer requires HTTP auth for API access (rare)'
+                    }
+                }
+            )
+
+        }
+
 
         if (showpreselect) {
             fieldset.push(
@@ -3085,7 +3204,6 @@ function ConfigFields() {
                                 help: "Not all indexers provide this information"
                             }
                         },
-
                         {
                             key: 'ignoreWords',
                             type: 'horizontalInput',
@@ -3096,7 +3214,6 @@ function ConfigFields() {
                                 help: "Results with any of these words in the title will be ignored"
                             }
                         },
-
                         {
                             key: 'requireWords',
                             type: 'horizontalInput',
@@ -3107,7 +3224,6 @@ function ConfigFields() {
                                 help: "Only results with at least of these words in the title will be displayed"
                             }
                         },
-
                         {
                             key: 'maxAge',
                             type: 'horizontalInput',
@@ -3120,8 +3236,6 @@ function ConfigFields() {
                                 }
                             }
                         },
-
-
                         {
                             key: 'generate_queries',
                             type: 'horizontalMultiselect',
@@ -3143,6 +3257,7 @@ function ConfigFields() {
                                 required: true
                             }
                         }
+
                     ]
                 },
                 {
@@ -3156,7 +3271,7 @@ function ConfigFields() {
                             type: 'horizontalSelect',
                             templateOptions: {
                                 type: 'select',
-                                label: 'Type',
+                                label: 'HTML parser',
                                 options: [
                                     {name: 'Default BS (slow)', value: 'html.parser'},
                                     {name: 'LXML (faster, needs to be installed separately)', value: 'lxml'}
@@ -3714,10 +3829,14 @@ function ConfigFields() {
                             enabled: true,
                             host: null,
                             apikey: null,
+                            hitLimit: null,
+                            hitLimitResetTime: new Date(0),
                             timeout: null,
                             name: null,
                             showOnSearch: true,
                             score: 0,
+                            username: null,
+                            password: null,
                             preselect: true,
                             accessType: "both",
                             search_ids: ["imdbid", "rid", "tvdbid"],

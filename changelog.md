@@ -1,6 +1,25 @@
 # NZB Hydra changelog
 
 ----------
+### 0.0.1a87
+Added: Show NZB downloads per indexer in stats.
+
+Added: HTTP auth for indexers (rarely needed).
+
+Fixed: Re-enable indexer on status page.
+
+### 0.0.1a86
+Added: Feature to limit the number of maximum API hits for an indexer in 24 hours.
+
+Added: Show proper page titles.
+
+Fixed: TypeError when using OMGWTF. 
+
+Fixed: Unable to load details page.
+
+### 0.0.1a85
+Changed: Try to solve database locked error.
+
 ### 0.0.1a84
 Added: Add NZB Finder to presets.
 
