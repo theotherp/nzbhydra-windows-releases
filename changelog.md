@@ -1,6 +1,35 @@
 # NZB Hydra changelog
 
 ----------
+### 0.0.1a94
+Changed: I redesigned the indexer configuration to look like the one in sonarr. It is a lot less cluttered now. Also connection tests are done automatically and for new indexers the capabilities test is executed automatically. Let me know what you think.
+
+Fixed: Properly recognize empty result pages from binsearch and don't show stack trace if the HTML could not be parsed.
+
+### 0.0.1a93
+Added: Support for details and getnfo via API.
+
+Added: Log IP of NZB downloader. Thanks to sanderjo.
+
+### 0.0.1a92
+Added: Make errors in config dialog better visible
+
+### 0.0.1a91
+Fixed: Bug in max age limit for results.
+
+### 0.0.1a90
+Fixed: Color in select list using dark theme.
+
+Added: Ubuntu upstart scripts and better daemon control/logging. Thanks to nikcub.
+
+### 0.0.1a89
+
+Added: Option to set git executable used for updates.
+
+Fixed: Don't try to exclude words with dots, dashes or spaces in queries if the indexer doesn't support it. Indexers that don't follow newznab standards (-- prefix for exclusions) will still not work properly, for now.
+
+Changed: Minor changes in dark theme.
+
 ### 0.0.1a88
 Added: Dark theme. Feedback appreciated.
 
@@ -15,6 +44,8 @@ Fixed: Re-enable indexer on status page.
 Added: Feature to limit the number of maximum API hits for an indexer in 24 hours.
 
 Added: Show proper page titles.
+
+Added: Show titles for ID based searches in history (if already known).
 
 Fixed: TypeError when using OMGWTF. 
 
