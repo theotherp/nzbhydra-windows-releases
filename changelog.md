@@ -1,6 +1,47 @@
 # NZB Hydra changelog
 
 ----------
+### 0.2.115
+Added: Basic torrent support. You need to run and configure [Jackett](https://github.com/Jackett/Jackett). Add trackers using the "Jackett" preset in the configuration. They will be only used for internal searches. Torrent clients are not supported and will never be.
+You can search manually and download the torrent files. That should be enough for most.
+
+Added: Limit indexers to certain categories. Makes most sense when you have added specialized torrent trackers and don't want to use them for categories in which they don't have content anyway. 
+
+Changed: Required and forbidden words are now handled a bit differently. If a word contains a dot or a dash (".", "-") then the word will be searched for anywhere in a result title. If it does not contain a dot or a dash then
+all the words in the title will be compared with the word. Example: Forbidding "abc" will dismiss the result "abc.def" or "abc def" but allow "abcdef" or "ab-cdef". Forbidding "ab-c" will dismis "ab-cdef".
+This way you'll be able, for example, to require release groups like "EA" without allowing a result like "Peachy-BOSS" and on the other hand forbidding "WEB-DL" without letting through "Spider.web-Dl.ist".
+I think this is the approach that will handle the most common cases.
+
+### 0.2.114
+Changed: Required words are now searched on a word basis instead of full-text, meaning that at least one of the required words needs to be a word in a result's title, not just be present anywhere in the title.
+ 
+Fixed: "All" category wasn't available in selection box after having selected another category.
+
+### 0.2.113
+Added: SOCKS proxy support by sanderjo
+
+### 0.2.112
+Fixed: Return correct NZBGeek details links.
+
+### 0.2.111
+Fixed: Lxml wouldn't load even if installed properly.
+
+Fixed: Download of debug infos wouldn't work in firefox.
+
+### 0.2.110
+Fixed: Make sure iconCssClass is set.
+
+### 0.2.109
+Fixed: Category mapping wouldn't work with omgwtf.
+
+Fixed: URL base was not included in NZB links when external URL was not set. Now the local IP address, configured port and scheme are used. Tools on your computer (and inside your network) should be able to use the generated links.
+  If you need to send links to tools outside your network you have to set the external URL.
+  
+Fixed: Excluding words with "--" in the search field didn't work.
+
+Fixed: Total number of results was not put into API search result if offset was 0.
+
+
 ### 0.2.108
 Changed: Rewrote auth handling. Unfortunately form based auth only works when calls from the GUI are done, as soon as you call any function from outside (e.g. CP) the token header is
  missing and you will be asked for credentials using basic auth. Now, when you enter them, hydra will accept them even with form based auth enabled.

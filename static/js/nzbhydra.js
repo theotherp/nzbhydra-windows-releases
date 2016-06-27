@@ -690,10 +690,10 @@ function searchResult() {
         templateUrl: 'static/html/directives/search-result.html',
         require: '^titleGroup',
         scope: {
-            titleGroup: "=",
-            showDuplicates: "=",
-            selected: "=",
-            rowIndex: "="
+            titleGroup: "<",
+            showDuplicates: "<",
+            selected: "<",
+            rowIndex: "<"
         },
         controller: ['$scope', '$element', '$attrs', controller],
         multiElement: true
@@ -747,7 +747,7 @@ function otherColumns($http, $templateCache, $compile, $window) {
     controller.$inject = ["$scope", "$http", "$uibModal", "growl"];
     return {
         scope: {
-            result: "="
+            result: "<"
         },
         multiElement: true,
 
@@ -945,7 +945,7 @@ function downloadNzbsButton() {
         templateUrl: 'static/html/directives/download-nzbs-button.html',
         require: ['^searchResults'],
         scope: {
-            searchResults: "="
+            searchResults: "<"
         },
         controller: controller
     };
@@ -1114,13 +1114,19 @@ function addableNzbs() {
         templateUrl: 'static/html/directives/addable-nzbs.html',
         require: ['^searchResultId'],
         scope: {
-            searchResultId: "="
+            searchResultId: "<",
+            downloadType: "<"
         },
         controller: controller
     };
 
     function controller($scope, NzbDownloadService) {
-        $scope.downloaders = NzbDownloadService.getEnabledDownloaders();
+        $scope.downloaders = _.filter(NzbDownloadService.getEnabledDownloaders(), function(downloader) {
+            if ($scope.downloadType != "nzb") {
+                return downloader.downloadType == $scope.downloadType
+            }
+            return true;
+        });
     }
 }
 
@@ -1133,8 +1139,8 @@ function addableNzb() {
     return {
         templateUrl: 'static/html/directives/addable-nzb.html',
         scope: {
-            searchResultId: "=",
-            downloader: "="
+            searchResultId: "<",
+            downloader: "<"
         },
         controller: controller
     };
@@ -1367,14 +1373,16 @@ function SystemController($scope, $state, $http, growl, RestartService, NzbHydra
     $scope.downloadDebuggingInfos = function() {
         $http({method: 'GET', url: '/internalapi/getdebugginginfos', responseType: 'arraybuffer'}).success(function (data, status, headers, config) {
             var a = document.createElement('a');
-            console.log(data);
             var blob = new Blob([data], {'type': "application/octet-stream"});
             a.href = URL.createObjectURL(blob);
             var filename = "nzbhydra-debuginfo-" + moment().format("YYYY-MM-DD-HH-mm") + ".zip";
             a.download = filename;
+            
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
         }).error(function (data, status, headers, config) {
-            // handle error
+            console.log("Error:" + status);
         });
     }
     
@@ -1906,7 +1914,7 @@ function SearchController($scope, $http, $stateParams, $state, SearchService, fo
     //Fill the form with the search values we got from the state params (so that their values are the same as in the current url)
     $scope.mode = $stateParams.mode;
     $scope.categories = _.filter(CategoriesService.getAll(), function(c) { 
-        return c.mayBeSelected && (c.ignoreResults == "never" || c.ignoreResults == "external"); 
+        return c.mayBeSelected && c.ignoreResults != "internal" && c.ignoreResults != "always"; 
     });
     if (angular.isDefined($stateParams.category) && $stateParams.category) {
         $scope.category = CategoriesService.getByName($stateParams.category);
@@ -2935,7 +2943,8 @@ angular
                     optionsAttr: 'bs-options',
                     ngOptions: 'option[to.valueProp] as option in to.options | filter: $select.search',
                     valueProp: 'id',
-                    labelProp: 'label'
+                    labelProp: 'label',
+                    getPlaceholder: function() {return "";}
                 }
             },
             templateUrl: 'ui-select-multiple.html',
@@ -3019,7 +3028,7 @@ angular
                                 return model;
                             },
                             fields: function () {
-                                return $scope.options.data.fieldsFunction(model, parentModel, isInitial);
+                                return $scope.options.data.fieldsFunction(model, parentModel, isInitial, angular.injector());
                             },
                             isInitial: function () {
                                 return isInitial
@@ -3550,14 +3559,14 @@ function ConfigFields($injector) {
                             help: 'Map newznab categories to hydra categories',
                             required: true
                         },
-                        parsers: [function(value) {
+                        parsers: [function (value) {
                             if (!value) {
                                 return value;
                             }
                             var arr = [];
                             arr.push.apply(arr, value.split(",").map(Number));
                             return arr;
-                            
+
                         }]
                     });
                     categoryFields.push({
@@ -3671,6 +3680,19 @@ function ConfigFields($injector) {
                                 type: 'switch',
                                 label: 'Use SSL',
                                 help: 'I recommend using a reverse proxy instead of this. Requires restart.'
+                            },
+                            watcher: {
+                                listener: restartListener
+                            }
+                        },
+                        {
+                            key: 'socksProxy',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'text',
+                                label: 'SOCKS proxy',
+                                placeholder: '127.0.0.1:1080',
+                                help: "IPv4 only"
                             },
                             watcher: {
                                 listener: restartListener
@@ -3850,6 +3872,7 @@ function ConfigFields($injector) {
                                 addonRight: {
                                     text: 'days'
                                 },
+                                required: true,
                                 help: 'Meta data from searches is stored in the database. When they\'re deleted links to hydra become invalid.'
                             }
                         },
@@ -3892,7 +3915,6 @@ function ConfigFields($injector) {
                     templateOptions: {
                         label: 'Indexer access'
                     },
-
                     fieldGroup: [
                         {
                             key: 'timeout',
@@ -3940,7 +3962,7 @@ function ConfigFields($injector) {
                                 type: 'text',
                                 label: 'Required words',
                                 placeholder: 'separate, with, commas, like, this',
-                                help: "Only results with at least of these words in the title will be displayed"
+                                help: "Only results with at least one of these words in the title will be used"
                             }
                         },
                         {
@@ -4115,7 +4137,7 @@ function ConfigFields($injector) {
                         presets: getIndexerPresets(),
                         fieldsFunction: getIndexerBoxFields,
                         allowDeleteFunction: function (model) {
-                            return model.type == 'newznab';
+                            return model.type == 'newznab' || model.type == 'jackett';
                         },
                         checkBeforeClose: function (scope, model) {
                             var IndexerCheckBeforeCloseService = $injector.get("IndexerCheckBeforeCloseService");
@@ -4258,6 +4280,7 @@ ConfigFields.$inject = ["$injector"];
 
 function getIndexerPresets() {
     return [
+        [
         {
             name: "6box",
             host: "https://6box.me",
@@ -4310,10 +4333,21 @@ function getIndexerPresets() {
             searchTypes: ["tvsearch", "movie"]
 
         }
+    ],
+        [
+            {
+                name: "Jackett",
+                host: "http://127.0.0.1:9117/torznab/YOURTRACKER",
+                search_ids: [],
+                searchTypes: [],
+                type: "jackett",
+                accessType: "internal"
+            }
+        ]
     ];
 }
 
-function getIndexerBoxFields(model, parentModel, isInitial) {
+function getIndexerBoxFields(model, parentModel, isInitial, injector) {
     var fieldset = [];
 
     fieldset.push({
@@ -4325,7 +4359,7 @@ function getIndexerBoxFields(model, parentModel, isInitial) {
         }
     });
 
-    if (model.type == 'newznab') {
+    if (model.type == 'newznab' || model.type == 'jackett') {
         fieldset.push(
             {
                 key: 'name',
@@ -4349,7 +4383,7 @@ function getIndexerBoxFields(model, parentModel, isInitial) {
                 }
             })
     }
-    if (model.type == 'newznab') {
+    if (model.type == 'newznab' || model.type == 'jackett') {
         fieldset.push(
             {
                 key: 'host',
@@ -4371,7 +4405,7 @@ function getIndexerBoxFields(model, parentModel, isInitial) {
         )
     }
 
-    if (model.type == 'newznab' || model.type == 'omgwtf') {
+    if (model.type == 'newznab' || model.type == 'jackett') {
         fieldset.push(
             {
                 key: 'apikey',
@@ -4436,7 +4470,7 @@ function getIndexerBoxFields(model, parentModel, isInitial) {
             }
         });
 
-    if (model.type == "newznab") {
+    if (model.type == 'newznab' || model.type == 'jackett') {
         fieldset.push(
             {
                 key: 'hitLimit',
@@ -4459,6 +4493,8 @@ function getIndexerBoxFields(model, parentModel, isInitial) {
                     help: 'UTC time at which the API hit counter is reset'
                 }
             });
+    }
+    if (model.type == 'newznab') {
         fieldset.push(
             {
                 key: 'username',
@@ -4495,7 +4531,7 @@ function getIndexerBoxFields(model, parentModel, isInitial) {
     }
 
 
-    if (model.type != "womble") {
+    if (model.type != "womble" && model.type != "jackett") {
         fieldset.push(
             {
                 key: 'preselect',
@@ -4521,6 +4557,82 @@ function getIndexerBoxFields(model, parentModel, isInitial) {
                     ]
                 }
             }
+        );
+    }
+    if (model.type != "womble") {
+        fieldset.push(
+            {
+                key: 'categories',
+                type: 'horizontalMultiselect',
+                templateOptions: {
+                    label: 'Enable for...',
+                    help: 'You can decide that this indexer should only be used for certain categories',
+                    options: [
+                        {
+                            id: "movies",
+                            label: "Movies"
+                        },
+                        {
+                            id: "movieshd",
+                            label: "Movies HD"
+                        },
+                        {
+                            id: "moviessd",
+                            label: "Movies SD"
+                        },
+                        {
+                            id: "tv",
+                            label: "TV"
+                        },
+                        {
+                            id: "tvhd",
+                            label: "TV HD"
+                        },
+                        {
+                            id: "tvsd",
+                            label: "TV SD"
+                        },
+                        {
+                            id: "audio",
+                            label: "Audio"
+                        },
+                        {
+                            id: "flac",
+                            label: "Audio FLAC"
+                        },
+                        {
+                            id: "mp3",
+                            label: "Audio MP3"
+                        },
+                        {
+                            id: "audiobook",
+                            label: "Audiobook"
+                        },
+                        {
+                            id: "console",
+                            label: "Console"
+                        },
+                        {
+                            id: "pc",
+                            label: "PC"
+                        },
+                        {
+                            id: "xxx",
+                            label: "XXX"
+                        },
+                        {
+                            id: "ebook",
+                            label: "Ebook"
+                        },
+                        {
+                            id: "comic",
+                            label: "Comic"
+                        }],
+                    getPlaceholder: function () {
+                        return "All categories";
+                    }
+                }
+            }
         )
     }
 
@@ -4538,10 +4650,18 @@ function getIndexerBoxFields(model, parentModel, isInitial) {
                         {label: 'Trakt', id: 'traktid'},
                         {label: 'TVMaze', id: 'tvmazeid'},
                         {label: 'TMDB', id: 'tmdbid'}
-                    ]
+                    ],
+                    getPlaceholder: function (model) {
+                        if (angular.isUndefined(model)) {
+                            return "Unknown";
+                        }
+                        return "None";
+                    }
                 }
             }
         );
+    }
+    if (model.type == 'newznab' || model.type == 'jackett') {
         fieldset.push(
             {
                 key: 'searchTypes',
@@ -4553,19 +4673,25 @@ function getIndexerBoxFields(model, parentModel, isInitial) {
                         {label: 'TV', id: 'tvsearch'},
                         {label: 'Ebooks', id: 'book'},
                         {label: 'Audio', id: 'audio'}
-                    ]
+                    ],
+                    getPlaceholder: function (model) {
+                        if (angular.isUndefined(model)) {
+                            return "Unknown";
+                        }
+                        return "None";
+                    }
                 }
             }
         )
     }
 
-    if (model.type == 'newznab') {
+    if (model.type == 'newznab' || model.type == 'jackett') {
         fieldset.push(
             {
                 type: 'horizontalCheckCaps',
-                hideExpression: '!model.host || !model.apikey || !model.name || angular.isUndefined(model.searchTypes)',
+                hideExpression: '!model.host || !model.apikey || !model.name',
                 templateOptions: {
-                    label: 'Check search types',
+                    label: 'Check capabilities',
                     help: 'Find out what search types the indexer supports. Done automatically for new indexers.'
                 }
             }
@@ -4743,7 +4869,8 @@ function getDownloaderBoxFields(model, parentModel, isInitial) {
             templateOptions: {
                 type: 'text',
                 label: 'Default category',
-                help: 'When adding NZBs this category will be used instead of asking for the category'
+                help: 'When adding NZBs this category will be used instead of asking for the category',
+                placeholder: 'Ask when downloading'
             }
         },
         {
@@ -4778,7 +4905,8 @@ function getDownloaderBoxFields(model, parentModel, isInitial) {
             templateOptions: {
                 type: 'text',
                 label: 'Icon CSS class',
-                help: 'Copy an icon name from http://fontawesome.io/examples/ (e.g. "film")'
+                help: 'Copy an icon name from http://fontawesome.io/examples/ (e.g. "film")',
+                placeholder: 'Default'
             }
         }
     ]);
@@ -4787,7 +4915,7 @@ function getDownloaderBoxFields(model, parentModel, isInitial) {
 }
 
 function getDownloaderPresets() {
-    return [
+    return [[
         {
             host: "127.0.0.1",
             name: "NZBGet",
@@ -4797,16 +4925,20 @@ function getDownloaderPresets() {
             type: "nzbget",
             username: "nzbgetx",
             nzbAddingType: "link",
-            nzbaccesstype: "serve"
+            nzbaccesstype: "redirect",
+            iconCssClass: "",
+            downloadType: "nzb"
         },
         {
             url: "http://localhost:8086",
             type: "sabnzbd",
             name: "SABnzbd",
             nzbAddingType: "link",
-            nzbaccesstype: "redirect"
+            nzbaccesstype: "redirect",
+            iconCssClass: "",
+            downloadType: "nzb"
         }
-    ];
+    ]];
 }
 
 
@@ -4868,7 +5000,7 @@ function IndexerCheckBeforeCloseService($q, ModalService, ConfigBoxService, bloc
             scope.spinnerActive = true;
             var url;
             var settings;
-            if (model.type == "newznab") {
+            if (model.type == "newznab" || model.type == "jackett") {
                 url = "internalapi/test_newznab";
                 settings = {host: model.host, apikey: model.apikey};
             } else if (model.type == "omgwtf") {
