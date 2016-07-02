@@ -1,6 +1,22 @@
 # NZB Hydra changelog
 
 ----------
+
+### 0.2.118
+Added: Newznab indexers will now be checked for their supported categories and by default only be enabled for those. For those categories that are not standardized by newznab (e.g. Anime, Ebooks, etc.). Hydra will try to determine the used category identifier for each indexer.
+ Please note that unfortunately there is no automatic process to do this for indexers that were already added. Please click the "Check types" button for every indexer once and then save. Sorry about that.
+  
+Added: Anime category and anizb indexer.
+
+Added: When selecting a category on the search page only those indexers that are enabled for that category will be displayed.
+
+Fixed: It looks like I found a solution to the long-standing "database is locked" issue. If true, the fix was embarrassingly, hilariously simple and obvious.
+
+Fixed: Entries in stats and indexer statuses are sorted (either better to worse or by name).
+
+### 0.2.117
+Fixed: API key wasn't displayed in omgwtf config.
+
 ### 0.2.116
 Fixed: Exception when API call with categories and offset > 0 was executed.
 
