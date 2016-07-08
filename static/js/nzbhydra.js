@@ -1945,7 +1945,7 @@ function SearchController($scope, $http, $stateParams, $state, SearchService, fo
     $scope.minage = getNumberOrUndefined($stateParams.minage);
     $scope.maxage = getNumberOrUndefined($stateParams.maxage);
     if (!_.isUndefined($scope.title) && _.isUndefined($scope.query)) {
-        $scope.query = $scope.title;
+        //$scope.query = $scope.title;
     }
     if (!angular.isUndefined($stateParams.indexers)) {
         $scope.indexers = decodeURIComponent($stateParams.indexers).split("|");
@@ -4072,7 +4072,7 @@ function ConfigFields($injector) {
                                 label: 'Duplicate age threshold',
                                 required: true,
                                 addonRight: {
-                                    text: 'seconds'
+                                    text: 'hours'
                                 }
                             }
                         },
@@ -4153,6 +4153,7 @@ function ConfigFields($injector) {
                             magazineCategory: null,
                             ebookCategory: null,
                             enabled: true,
+                            categories: [],
                             host: null,
                             apikey: null,
                             hitLimit: null,
@@ -5083,7 +5084,7 @@ function IndexerCheckBeforeCloseService($q, ModalService, ConfigBoxService, bloc
                 function (data, model) {
                     blockUI.reset();
                     scope.spinnerActive = false;
-                    growl.info("Successfully tested capabilites of indexer. Supports: " + data.supportedIds + "," ? data.supportedIds && data.supportedTypes : "" + data.supportedTypes);
+                    growl.info("Successfully tested capabilites of indexer");
                     deferred.resolve();
                 },
                 function () {
