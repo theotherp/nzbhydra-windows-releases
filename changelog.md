@@ -1,6 +1,16 @@
 # NZB Hydra changelog
 
 ----------
+### 0.2.125
+Changed: Drastically improved processing time. Duplicate detection is about 60% faster. Searches with a lot of new results (not already in the database) are up to 7 times faster (which only shows how bad it was before).
+
+### 0.2.124
+Added: Set "no referrer" tag.
+
+Added: API hit limit rolling reset. The indexer doesn't reset the hits at a certain point but you're not allowed to make more than x limits in a 24 hour window. This is used by default.
+
+Changed: Hit limit reset time is defined as hour of day now instead of time of day.
+
 ### 0.2.123
 Fixed: Categories not set for new indexers not added by selecting a preset.
 
