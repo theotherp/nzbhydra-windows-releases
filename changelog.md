@@ -1,6 +1,18 @@
 # NZB Hydra changelog
 
 ----------
+### 0.2.127
+Fixed: Fallback if indexer was not properly added to the database.
+
+Fixed: Fallback if indexer capabilities settings are not properly set for some reason.
+
+Fixed: Allow empty username and password for sabnzbd.
+
+Changed: Remove "-Obfuscated" from NZBGeek results for better title pairing.
+
+### 0.2.126
+Changed: Better error message if an indexer API access could not be saved
+
 ### 0.2.125
 Changed: Drastically improved processing time. Duplicate detection is about 60% faster. Searches with a lot of new results (not already in the database) are up to 7 times faster (which only shows how bad it was before).
 
