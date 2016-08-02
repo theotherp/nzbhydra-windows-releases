@@ -1,7 +1,14 @@
 # NZB Hydra changelog
 
 ----------
-### 0.2.127
+### 0.2.129
+Added: Support for daily shows.
+
+Fixed: Migration from config version 22 didn't work so all users with that version would get errors. Sorry about that.
+
+Changed: Added a small section in the online help to explain indexer priorities.
+
+### 0.2.128
 Fixed: Better error handling with testing indexer caps.
 
 ### 0.2.127
