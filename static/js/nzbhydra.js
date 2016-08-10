@@ -1261,7 +1261,7 @@ function UpdateService($http, growl, blockUI, RestartService) {
         blockUI.start("Updating. Please stand by...");
         $http.get("internalapi/update").then(function (data) {
                 if (data.data.success) {
-                    RestartService.countdownAndReload("Update complete.");
+                    RestartService.countdownAndReload("Update complete.", 15);
                 } else {
                     blockUI.reset();
                     growl.info("An error occurred while updating. Please check the logs.");
@@ -2174,42 +2174,27 @@ function RestartService(blockUI, $timeout, $window, NzbHydraControlService) {
         countdownAndReload: countdownAndReload
     };
 
-    function countdownAndReload(message) {
+    function countdownAndReload(message, timer) {
         message = angular.isUndefined ? "" : " ";
-        //THere has to be a better way for this
-        blockUI.start(message + "Restarting. Will reload page in 9 seconds...");
-        $timeout(function () {
-            blockUI.start(message + "Restarting. Will reload page in 8 seconds...");
+        
+        if (timer > 1) {
+            blockUI.start(message + "Restarting. Will reload page in " + timer + " seconds...");
             $timeout(function () {
-                blockUI.start(message + "Restarting. Will reload page in 7 seconds...");
-                $timeout(function () {
-                    blockUI.start(message + "Restarting. Will reload page in 6 seconds...");
-                    $timeout(function () {
-                        blockUI.start(message + "Restarting. Will reload page in 5 seconds...");
-                        $timeout(function () {
-                            blockUI.start(message + "Restarting. Will reload page in 4 seconds...");
-                            $timeout(function () {
-                                blockUI.start(message + "Restarting. Will reload page in 3 seconds...");
-                                $timeout(function () {
-                                    blockUI.start(message + "Restarting. Will reload page in 2 seconds...");
-                                    $timeout(function () {
-                                        blockUI.start(message + "Restarting. Will reload page in 1 second...");
-                                        $timeout(function () {
-                                            blockUI.start("Reloading page...");
-                                            $window.location.reload();
-                                        }, 1000);
-                                    }, 1000);
-                                }, 1000);
-                            }, 1000);
-                        }, 1000);
-                    }, 1000);
-                }, 1000);
+                countdownAndReload(message, timer -1)
             }, 1000);
-        }, 1000);
+        } else {
+            $timeout(function () {
+                blockUI.start("Reloading page...");
+                $window.location.reload();
+            }, 1000);
+        }
+        
     }
+    
+    
 
     function restart(message) {
-        NzbHydraControlService.restart().then(countdownAndReload(message),
+        NzbHydraControlService.restart().then(countdownAndReload(message, 15),
             function () {
                 growl.info("Unable to send restart command.");
             }
@@ -3529,6 +3514,15 @@ function ConfigFields($injector) {
                             }
                         },
                         {
+                            key: "categories." + category.name + '.requiredRegex',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'text',
+                                label: 'Required regex',
+                                help: 'Must be present in a title (case insensitive)'
+                            }
+                        },
+                        {
                             key: "categories." + category.name + '.forbiddenWords',
                             type: 'horizontalInput',
                             templateOptions: {
@@ -3536,8 +3530,16 @@ function ConfigFields($injector) {
                                 label: 'Forbidden words',
                                 placeholder: 'separate, with, commas, like, this'
                             }
-                        }
-                        ,
+                        },
+                        {
+                            key: "categories." + category.name + '.forbiddenRegex',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'text',
+                                label: 'Forbidden regex',
+                                help: 'Must not be present in a title (case insensitive)'
+                            }
+                        },
                         {
                             key: "categories." + category.name + '.applyRestrictions',
                             type: 'horizontalSelect',
@@ -3982,6 +3984,15 @@ function ConfigFields($injector) {
                             }
                         },
                         {
+                            key: 'forbiddenRegex',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'text',
+                                label: 'Forbidden regex',
+                                help: 'Must not be present in a title (case insensitive)'
+                            }
+                        },
+                        {
                             key: 'requiredWords',
                             type: 'horizontalInput',
                             templateOptions: {
@@ -3989,6 +4000,15 @@ function ConfigFields($injector) {
                                 label: 'Required words',
                                 placeholder: 'separate, with, commas, like, this',
                                 help: "Only results with at least one of these words in the title will be used"
+                            }
+                        },
+                        {
+                            key: 'requiredRegex',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'text',
+                                label: 'Required regex',
+                                help: 'Must be present in a title (case insensitive)'
                             }
                         },
                         {
@@ -4080,12 +4100,12 @@ function ConfigFields($injector) {
                             }
                         },
                         {
-                            key: 'removeDuplicatesExternal',
+                            key: 'alwaysShowDuplicates',
                             type: 'horizontalSwitch',
                             templateOptions: {
                                 type: 'switch',
-                                label: 'Remove API duplicates',
-                                help: 'Remove duplicates when searching via API'
+                                label: 'Always show duplicates',
+                                help: 'Activate to show duplicates in search results by default'
                             }
                         },
                         {
