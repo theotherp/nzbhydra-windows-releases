@@ -1,4 +1,4 @@
-var nzbhydraapp = angular.module('nzbhydraApp', ['angular-loading-bar', 'cgBusy', 'ngAnimate', 'ui.bootstrap', 'ipCookie', 'angular-growl', 'angular.filter', 'filters', 'ui.router', 'blockUI', 'mgcrea.ngStrap', 'angularUtils.directives.dirPagination', 'nvd3', 'formly', 'formlyBootstrap', 'frapontillo.bootstrap-switch', 'ui.select', 'ngSanitize', 'checklist-model', 'ngAria', 'ngMessages', 'ui.router.title', 'satellizer', 'LocalStorageModule']);
+var nzbhydraapp = angular.module('nzbhydraApp', ['angular-loading-bar', 'cgBusy', 'ngAnimate', 'ui.bootstrap', 'ipCookie', 'angular-growl', 'angular.filter', 'filters', 'ui.router', 'blockUI', 'mgcrea.ngStrap', 'angularUtils.directives.dirPagination', 'nvd3', 'formly', 'formlyBootstrap', 'frapontillo.bootstrap-switch', 'ui.select', 'ngSanitize', 'checklist-model', 'ngAria', 'ngMessages', 'ui.router.title', 'satellizer', 'LocalStorageModule', 'angular.filter']);
 
 angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$locationProvider", "blockUIConfig", "$urlMatcherFactoryProvider", "$authProvider", "localStorageServiceProvider", "bootstrapped", function ($stateProvider, $urlRouterProvider, $locationProvider, blockUIConfig, $urlMatcherFactoryProvider, $authProvider, localStorageServiceProvider, bootstrapped) {
 
@@ -694,60 +694,37 @@ function hydraupdates() {
 
 angular
     .module('nzbhydraApp')
-    .directive('searchResult', searchResult);
+    .directive('titleGroup', titleGroup);
 
-function searchResult() {
+function titleGroup() {
     return {
-        templateUrl: 'static/html/directives/search-result.html',
-        require: '^titleGroup',
+        templateUrl: 'static/html/directives/title-group.html',
         scope: {
-            titleGroup: "<",
-            showDuplicates: "<",
-            selected: "<",
-            rowIndex: "<"
+            titles: "<",
+            selected: "=",
+            rowIndex: "@",
+            doShowDuplicates: "<",
+            internalRowIndex: "@"
         },
         controller: ['$scope', '$element', '$attrs', controller],
         multiElement: true
     };
 
     function controller($scope, $element, $attrs) {
+        $scope.expanded = false;
         $scope.titleGroupExpanded = false;
-        $scope.hashGroupExpanded = {};
 
-        $scope.toggleTitleGroup = function () {
-            $scope.titleGroupExpanded = !$scope.titleGroupExpanded;
-            if (!$scope.titleGroupExpanded) {
-                $scope.hashGroupExpanded[$scope.titleGroup[0][0].hash] = false; //Also collapse the first title's duplicates
-            }
-        };
+        $scope.$on("toggleTitleExpansion", function (event, args) {
+            $scope.titleGroupExpanded = args;
+            event.stopPropagation();
+        });
 
-        $scope.groupingRowDuplicatesToShow = groupingRowDuplicatesToShow;
-        function groupingRowDuplicatesToShow() {
-            if ($scope.showDuplicates &&  $scope.titleGroup[0].length > 1 && $scope.hashGroupExpanded[$scope.titleGroup[0][0].hash]) {
-                return $scope.titleGroup[0].slice(1);
-            } else {
-                return [];
-            }
-        }
 
-        //<div ng-repeat="hashGroup in titleGroup" ng-if="titleGroup.length > 0 && titleGroupExpanded"  class="search-results-row">
-        $scope.otherTitleRowsToShow = otherTitleRowsToShow;
-        function otherTitleRowsToShow() {
-            if ($scope.titleGroup.length > 1 && $scope.titleGroupExpanded) {
-                return $scope.titleGroup.slice(1);
-            } else {
-                return [];
-            }
+        $scope.titlesToShow = titlesToShow;
+        function titlesToShow() {
+            return $scope.titles.slice(1);
         }
         
-        $scope.hashGroupDuplicatesToShow = hashGroupDuplicatesToShow;
-        function hashGroupDuplicatesToShow(hashGroup) {
-            if ($scope.showDuplicates && $scope.hashGroupExpanded[hashGroup[0].hash]) {
-                return hashGroup.slice(1);
-            } else {
-                return [];
-            }
-        }
     }
 }
 angular
@@ -946,6 +923,111 @@ function focusOn() {
     }
 }
 
+angular
+    .module('nzbhydraApp')
+    .directive('duplicateGroup', duplicateGroup);
+
+function duplicateGroup() {
+    titleRowController.$inject = ["$scope", "localStorageService"];
+    return {
+        templateUrl: 'static/html/directives/duplicate-group.html',
+        scope: {
+            duplicates: "<",
+            selected: "=",
+            isFirstRow: "<",
+            rowIndex: "<",
+            displayTitleToggle: "<",
+            internalRowIndex: "@"
+        },
+        controller: titleRowController
+    };
+
+    function titleRowController($scope, localStorageService) {
+        $scope.internalRowIndex = Number($scope.internalRowIndex);
+        $scope.rowIndex = Number($scope.rowIndex);
+        $scope.titlesExpanded = false;
+        $scope.duplicatesExpanded = false;
+        $scope.foo = {
+            duplicatesDisplayed: localStorageService.get("duplicatesDisplayed") != null ? localStorageService.get("duplicatesDisplayed") : false
+        };
+        $scope.duplicatesToShow = duplicatesToShow;
+        function duplicatesToShow() {
+            return $scope.duplicates.slice(1);
+        }
+
+        $scope.toggleTitleExpansion = function () {
+            $scope.titlesExpanded = !$scope.titlesExpanded;
+            $scope.$emit("toggleTitleExpansion", $scope.titlesExpanded);
+        };
+
+        $scope.toggleDuplicateExpansion = function () {
+            $scope.duplicatesExpanded = !$scope.duplicatesExpanded;
+        };
+
+        $scope.$on("invertSelection", function () {
+            for (var i = 0; i < $scope.duplicates.length; i++) {
+                if ($scope.duplicatesExpanded) {
+                    invertSelection($scope.selected, $scope.duplicates[i]);
+                } else {
+                    if (i > 0) {
+                        //Always remove duplicates that aren't displayed
+                        invertSelection($scope.selected, $scope.duplicates[i], true);
+                    } else {
+                        invertSelection($scope.selected, $scope.duplicates[i]);
+                    }
+                }
+            }
+        });
+
+        $scope.$on("duplicatesDisplayed", function (event, args) {
+            $scope.foo.duplicatesDisplayed = args;
+        });
+
+        $scope.clickCheckbox = function (event) {
+            var globalCheckboxIndex = $scope.rowIndex * 1000 + $scope.internalRowIndex * 100 + Number(event.currentTarget.dataset.checkboxIndex);
+            console.log(globalCheckboxIndex);
+            $scope.$emit("checkboxClicked", event, globalCheckboxIndex, event.currentTarget.checked);
+        };
+
+        function isBetween(num, betweena, betweenb) {
+            return (betweena <= num && num <= betweenb) || (betweena >= num && num >= betweenb);
+        }
+
+        $scope.$on("shiftClick", function (event, startIndex, endIndex, newValue) {
+            var globalDuplicateGroupIndex = $scope.rowIndex * 1000 + $scope.internalRowIndex * 100;
+            if (isBetween(globalDuplicateGroupIndex, startIndex, endIndex)) {
+
+                for (var i = 0; i < $scope.duplicates.length; i++) {
+                    if (isBetween(globalDuplicateGroupIndex + i, startIndex, endIndex)) {
+                        if (i == 0 || $scope.duplicatesExpanded) {
+                            console.log("Indirectly clicked row with global index " + (globalDuplicateGroupIndex + i) + " setting new checkbox value to " + newValue);
+                            var index = _.indexOf($scope.selected, $scope.duplicates[i]);
+                            if (index == -1 && newValue) {
+                                console.log("Adding to selection");
+                                $scope.selected.push($scope.duplicates[i]);
+                            } else if (index > -1 && !newValue) {
+                                $scope.selected.splice(index, 1);
+                                console.log("Removing from selection");
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        function invertSelection(a, b, dontPush) {
+            var index = _.indexOf(a, b);
+            if (index > -1) {
+                a.splice(index, 1);
+            } else {
+                if (!dontPush)
+                    a.push(b);
+            }
+        }
+    }
+
+
+}
 angular
     .module('nzbhydraApp')
     .directive('downloadNzbsButton', downloadNzbsButton);
@@ -1596,7 +1678,6 @@ angular
 //SearchResultsController.$inject = ['blockUi'];
 function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, growl, localStorageService, SearchService, ConfigService) {
 
-    
     if (localStorageService.get("sorting") != null) {
         var sorting = localStorageService.get("sorting");
         $scope.sortPredicate = sorting.predicate;
@@ -1613,10 +1694,14 @@ function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, gr
     $scope.indexerDisplayState = []; //Stores if a indexer's results should be displayed or not
     $scope.indexerResultsInfo = {}; //Stores information about the indexer's results like how many we already retrieved
     $scope.groupExpanded = {};
-    $scope.doShowDuplicates = ConfigService.getSafe().searching.alwaysShowDuplicates;
     $scope.selected = [];
+    $scope.lastClicked = null;
+    $scope.lastClickedValue = null;
     
-    $scope.indexerStatusesExpanded = localStorageService.get("indexerStatusesExpanded") != null ? localStorageService.get("indexerStatusesExpanded") : false;
+    $scope.foo = {
+        indexerStatusesExpanded: localStorageService.get("indexerStatusesExpanded") != null ? localStorageService.get("indexerStatusesExpanded") : false,
+        duplicatesDisplayed: localStorageService.get("duplicatesDisplayed") != null ? localStorageService.get("duplicatesDisplayed") : false
+    };
     
     $scope.countFilteredOut = 0;
 
@@ -1754,8 +1839,10 @@ function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, gr
         if ($scope.countFilteredOut > 0) {
             growl.info("Filtered " + $scope.countFilteredOut + " of the retrieved results");
         }
-        return filtered;
 
+        $scope.lastClicked = null;
+        
+        return filtered;
     }
 
     $scope.toggleTitlegroupExpand = function toggleTitlegroupExpand(titleGroup) {
@@ -1800,16 +1887,29 @@ function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, gr
         return $scope.results.length;
     }
     
-    
     $scope.invertSelection = function invertSelection() {
-        $scope.selected = _.difference($scope.results, $scope.selected);
+        $scope.$broadcast("invertSelection");
     };
     
-    $scope.toggleIndexerStatuses = function() {
-        $scope.indexerStatusesExpanded = !$scope.indexerStatusesExpanded;
-        localStorageService.set("indexerStatusesExpanded", $scope.indexerStatusesExpanded);
-    }
+    $scope.toggleIndexerStatuses = function(indexerStatusesExpanded) {
+        //For some reason the value is actually the other way around
+        localStorageService.set("indexerStatusesExpanded", !indexerStatusesExpanded);
+    };
 
+    $scope.toggleDuplicatesDisplayed = function () {
+        $scope.duplicatesDisplayed = !$scope.duplicatesDisplayed;
+        localStorageService.set("duplicatesDisplayed", $scope.duplicatesDisplayed);
+        $scope.$broadcast("duplicatesDisplayed", $scope.duplicatesDisplayed);
+    };
+
+    $scope.$on("checkboxClicked", function(event, originalEvent, rowIndex, newCheckedValue) {
+        if (originalEvent.shiftKey && $scope.lastClicked != null) {
+            console.log("Shift clicked from " + $scope.lastClicked + " to " + rowIndex);
+            $scope.$broadcast("shiftClick", Number($scope.lastClicked), Number(rowIndex), Number($scope.lastClickedValue));
+        }
+        $scope.lastClicked = rowIndex;
+        $scope.lastClickedValue = newCheckedValue;
+    })
 }
 SearchResultsController.$inject = ["$stateParams", "$scope", "$q", "$timeout", "blockUI", "growl", "localStorageService", "SearchService", "ConfigService"];
 angular
@@ -2151,6 +2251,12 @@ function SearchController($scope, $http, $stateParams, $state, SearchService, fo
                 return {name: indexer.name, activated: isIndexerPreselected(indexer), categories: indexer.categories};
             }).value();
     }
+    
+    $scope.toggleAllIndexers = function() {
+        angular.forEach($scope.availableIndexers, function(indexer) {
+            indexer.activated = !indexer.activated; 
+        })
+    };
 
     $scope.availableIndexers = getAvailableIndexers();
     
@@ -3214,13 +3320,8 @@ ConfigBoxService.$inject = ["$http", "$q"];
 var filters = angular.module('filters', []);
 
 filters.filter('bytes', function() {
-	return function(bytes, precision) {
-		if (isNaN(parseFloat(bytes)) || !isFinite(bytes) || bytes == 0) return '-';
-		if (typeof precision === 'undefined') precision = 1;
-		
-		var units = ['b', 'kB', 'MB', 'GB', 'TB', 'PB'],
-			number = Math.floor(Math.log(bytes) / Math.log(1024));
-		return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) +   units[number];
+	return function(bytes) {
+		return filesize(bytes);
 	}
 });
 
@@ -3231,6 +3332,8 @@ filters.filter('unsafe',
 		};
 	}]
 );
+
+
 angular
     .module('nzbhydraApp')
     .factory('DownloaderCategoriesService', DownloaderCategoriesService);

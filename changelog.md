@@ -1,6 +1,32 @@
 # NZB Hydra changelog
 
 ----------
+### 0.2.141
+Changed: Rewrote some of the search result presentation logic which improves rendering time a bit (still slow, though).
+
+Added/Fixed: Button to invert selection is back and should work as expected.
+
+Added: Shift-click support for the result checkboxes. Click one result, shift click another and all shown displayed checkboses between them will be set to the new value of the first clicked checkbox.
+  
+Changed: Replaced collapse icons with + and - which I find easier do understand / recognize.
+
+### 0.2.140
+Changed: Hopefully improved the performance of writing results to the database. Let me know what happens. 
+
+### 0.2.139
+Added: Log how long a search took.
+
+### 0.2.138
+Added: Some performance related debug loggings.
+
+### 0.2.137
+Added: Button to invert indexer selection on earch page.
+
+Fixed: Indexer statuses box would not store state properly.
+
+### 0.2.136
+Fixed: Womble would not search at all.
+
 ### 0.2.135
 Added: Log a warning if no indexers were picked and provide the reasons.
 
