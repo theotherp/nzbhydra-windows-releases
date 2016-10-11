@@ -1,6 +1,35 @@
 # NZB Hydra changelog
 
 ----------
+### 0.2.148
+Added: Restore settings from backup via GUI. Please note that this only supports backup ZIPs created with this version or later.
+
+Added: Display number of rejected results in search results view and new button to load all available results.
+
+Added: Enhanced stat calculation:
+    * Show the average daily number of API accesses for each indexers
+    * Show the average number of unique results each indexer contributed in a search (will only work for searches made from this point on). Also added some text explaining that ;-)
+    * Show average number of downloads and searches per day of week and hour of day
+    * Added some fancy charts
+
+Changed: Removed option that decided if duplicates should be removed for API calls, this is now always enabled.
+
+Changed: Changed and rewrote database handling. Should (mostly) prevent the notorious "database is locked" errors.
+
+Fixed: Downloads would always be displayed as "API" in the history. 
+ 
+Fixed: NZBIndex result titles would be stripped of all spaces.
+
+Fixed: Indexer statuses box wouldn't remember state.
+
+Fixed: Enabling and disabling indexers would not be properly broadcasted to all areas of the code.
+
+Fixed: Some color inconsistencies.
+
+Fixed: Better handle NZBClub returning an empty page.
+
+Fixed: Better handle parsing errors in general.
+
 ### 0.2.147
 Changed: Rewrote search result database handling in the hope of fixing this schlamassel.
 

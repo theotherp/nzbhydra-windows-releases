@@ -1,4 +1,4 @@
-var nzbhydraapp = angular.module('nzbhydraApp', ['angular-loading-bar', 'cgBusy', 'ui.bootstrap', 'ipCookie', 'angular-growl', 'angular.filter', 'filters', 'ui.router', 'blockUI', 'mgcrea.ngStrap', 'angularUtils.directives.dirPagination', 'nvd3', 'formly', 'formlyBootstrap', 'frapontillo.bootstrap-switch', 'ui.select', 'ngSanitize', 'checklist-model', 'ngAria', 'ngMessages', 'ui.router.title', 'satellizer', 'LocalStorageModule', 'angular.filter']);
+var nzbhydraapp = angular.module('nzbhydraApp', ['angular-loading-bar', 'cgBusy', 'ui.bootstrap', 'ipCookie', 'angular-growl', 'angular.filter', 'filters', 'ui.router', 'blockUI', 'mgcrea.ngStrap', 'angularUtils.directives.dirPagination', 'nvd3', 'formly', 'formlyBootstrap', 'frapontillo.bootstrap-switch', 'ui.select', 'ngSanitize', 'checklist-model', 'ngAria', 'ngMessages', 'ui.router.title', 'satellizer', 'LocalStorageModule', 'angular.filter', 'ngFileUpload']);
 
 angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$locationProvider", "blockUIConfig", "$urlMatcherFactoryProvider", "$authProvider", "localStorageServiceProvider", "bootstrapped", function ($stateProvider, $urlRouterProvider, $locationProvider, blockUIConfig, $urlMatcherFactoryProvider, $authProvider, localStorageServiceProvider, bootstrapped) {
 
@@ -694,6 +694,37 @@ function hydraupdates() {
 
 angular
     .module('nzbhydraApp')
+    .directive('titleRow', titleRow);
+
+function titleRow() {
+    return {
+        templateUrl: 'static/html/directives/title-row.html',
+        scope: {
+            duplicates: "<",
+            selected: "<",
+            rowIndex: "@"
+        },
+        controller: ['$scope', '$element', '$attrs', titleRowController]
+    };
+
+    function titleRowController($scope) {
+        $scope.expanded = false;
+        console.log("Building title row");
+        $scope.duplicatesToShow = duplicatesToShow;
+        function duplicatesToShow() {
+            if ($scope.expanded && $scope.duplicates.length > 1) {
+                console.log("Showing all duplicates in group");
+                return $scope.duplicates;
+            } else {
+                console.log("Showing first duplicate in group");
+                return [$scope.duplicates[0]];
+            }
+        }
+
+    }
+}
+angular
+    .module('nzbhydraApp')
     .directive('titleGroup', titleGroup);
 
 function titleGroup() {
@@ -725,6 +756,85 @@ function titleGroup() {
             return $scope.titles.slice(1);
         }
         
+    }
+}
+angular
+    .module('nzbhydraApp')
+    .directive('tabOrChart', tabOrChart);
+
+function tabOrChart() {
+    return {
+        templateUrl: 'static/html/directives/tab-or-chart.html',
+        transclude:  {
+            "chartSlot": "chart",
+            "tableSlot": "table"
+        },
+        restrict: 'E',
+        replace: true,
+        scope: {
+            display: "@"
+        }
+
+    };
+
+}
+
+angular
+    .module('nzbhydraApp')
+    .directive('searchResult', searchResult);
+
+function searchResult() {
+    return {
+        templateUrl: 'static/html/directives/search-result.html',
+        require: '^titleGroup',
+        scope: {
+            titleGroup: "<",
+            showDuplicates: "<",
+            selected: "<",
+            rowIndex: "<"
+        },
+        controller: ['$scope', '$element', '$attrs', controller],
+        multiElement: true
+    };
+
+    function controller($scope, $element, $attrs) {
+        $scope.titleGroupExpanded = false;
+        $scope.hashGroupExpanded = {};
+
+        $scope.toggleTitleGroup = function () {
+            $scope.titleGroupExpanded = !$scope.titleGroupExpanded;
+            if (!$scope.titleGroupExpanded) {
+                $scope.hashGroupExpanded[$scope.titleGroup[0][0].hash] = false; //Also collapse the first title's duplicates
+            }
+        };
+
+        $scope.groupingRowDuplicatesToShow = groupingRowDuplicatesToShow;
+        function groupingRowDuplicatesToShow() {
+            if ($scope.showDuplicates &&  $scope.titleGroup[0].length > 1 && $scope.hashGroupExpanded[$scope.titleGroup[0][0].hash]) {
+                return $scope.titleGroup[0].slice(1);
+            } else {
+                return [];
+            }
+        }
+
+        //<div ng-repeat="hashGroup in titleGroup" ng-if="titleGroup.length > 0 && titleGroupExpanded"  class="search-results-row">
+        $scope.otherTitleRowsToShow = otherTitleRowsToShow;
+        function otherTitleRowsToShow() {
+            if ($scope.titleGroup.length > 1 && $scope.titleGroupExpanded) {
+                return $scope.titleGroup.slice(1);
+            } else {
+                return [];
+            }
+        }
+        
+        $scope.hashGroupDuplicatesToShow = hashGroupDuplicatesToShow;
+        function hashGroupDuplicatesToShow(hashGroup) {
+            if ($scope.showDuplicates && $scope.hashGroupExpanded[hashGroup[0].hash]) {
+                return hashGroup.slice(1);
+            } else {
+                return [];
+            }
+        }
     }
 }
 angular
@@ -1182,17 +1292,80 @@ angular
     .directive('hydrabackup', hydrabackup);
 
 function hydrabackup() {
-    controller.$inject = ["$scope", "BackupService"];
+    controller.$inject = ["$scope", "BackupService", "Upload", "RequestsErrorHandler", "growl", "RestartService", "$http"];
     return {
         templateUrl: 'static/html/directives/backup.html',
         controller: controller
     };
 
-    function controller($scope, BackupService) {
-        BackupService.getBackupsList().then(function(backups) {
-            $scope.backups = backups;
-        });
-        
+    function controller($scope, BackupService, Upload, RequestsErrorHandler, growl, RestartService, $http) {
+        $scope.refreshBackupList = function () {
+            BackupService.getBackupsList().then(function (backups) {
+                $scope.backups = backups;
+            });
+        };
+
+        $scope.refreshBackupList();
+
+        $scope.uploadActive = false;
+
+
+        $scope.createAndDownloadBackupFile = function() {
+
+                $http({method: 'GET', url: '/internalapi/getbackup', responseType: 'arraybuffer'}).success(function (data, status, headers, config) {
+                    var a = document.createElement('a');
+                    var blob = new Blob([data], {'type': "application/octet-stream"});
+                    a.href = URL.createObjectURL(blob);
+                    a.download = "nzbhydra-backup-" + moment().format("YYYY-MM-DD-HH-mm") + ".zip";
+
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    $scope.refreshBackupList();
+                }).error(function (data, status, headers, config) {
+                    console.log("Error:" + status);
+                });
+
+        };
+
+        $scope.uploadBackupFile = function (file, errFiles) {
+            RequestsErrorHandler.specificallyHandled(function () {
+                console.log("Hallo");
+                $scope.file = file;
+                $scope.errFile = errFiles && errFiles[0];
+                if (file) {
+                    $scope.uploadActive = true;
+                    file.upload = Upload.upload({
+                        url: 'internalapi/restorebackup',
+                        data: {content: file}
+                    });
+
+                    file.upload.then(function (response) {
+                        $scope.uploadActive = false;
+                        file.result = response.data;
+                        RestartService.restart("Restore successful.");
+
+                    }, function (response) {
+                        $scope.uploadActive = false;
+                        growl.error(response.data)
+                    }, function (evt) {
+                        file.progress = Math.min(100, parseInt(100.0 * evt.loaded / evt.total));
+                        file.loaded = Math.floor(evt.loaded / 1024);
+                        file.total = Math.floor(evt.total / 1024);
+                    });
+                }
+            });
+        };
+
+        $scope.restoreFromFile = function(filename) {
+            BackupService.restoreFromFile(filename).then(function() {
+                RestartService.restart("Restore successful.");
+            },
+            function(response) {
+                growl.error(response.data);
+            })
+        }
+
     }
 }
 
@@ -1545,7 +1718,7 @@ angular
     .module('nzbhydraApp')
     .controller('StatsController', StatsController);
 
-function StatsController($scope, stats) {
+function StatsController($scope, $filter, stats) {
 
     stats = stats.data;
     $scope.nzbDownloads = null;
@@ -1553,9 +1726,188 @@ function StatsController($scope, stats) {
     $scope.avgIndexerSearchResultsShares = stats.avgIndexerSearchResultsShares;
     $scope.avgIndexerAccessSuccesses = stats.avgIndexerAccessSuccesses;
     $scope.indexerDownloadShares = stats.indexerDownloadShares;
-    
+    $scope.downloadsPerHourOfDay = stats.timeBasedDownloadStats.perHourOfDay;
+    $scope.downloadsPerDayOfWeek = stats.timeBasedDownloadStats.perDayOfWeek;
+    $scope.searchesPerHourOfDay = stats.timeBasedSearchStats.perHourOfDay;
+    $scope.searchesPerDayOfWeek = stats.timeBasedSearchStats.perDayOfWeek;
+
+    function getChart(chartType, values, xKey, yKey, xAxisLabel, yAxisLabel) {
+        return {
+            options: {
+                chart: {
+                    type: chartType,
+                    height: 350,
+                    margin: {
+                        top: 20,
+                        right: 20,
+                        bottom: 100,
+                        left: 50
+                    },
+                    x: function (d) {
+                        return d[xKey];
+                    },
+                    y: function (d) {
+                        return d[yKey];
+                    },
+                    showValues: true,
+                    valueFormat: function (d) {
+                        return d;
+                    },
+                    color: function () {
+                        return "red"
+                    },
+                    showControls: false,
+                    showLegend: false,
+                    duration: 100,
+                    xAxis: {
+                        axisLabel: xAxisLabel,
+                        tickFormat: function (d) {
+                            return d;
+                        },
+                        rotateLabels: 30,
+                        showMaxMin: false,
+                        color: function () {
+                            return "white"
+                        }
+                    },
+                    yAxis: {
+                        axisLabel: yAxisLabel,
+                        axisLabelDistance: -10,
+                        tickFormat: function (d) {
+                            return d;
+                        }
+                    },
+                    tooltip: {
+                        enabled: false
+                    },
+                    zoom: {
+                        enabled: true,
+                        scaleExtent: [1, 10],
+                        useFixedDomain: false,
+                        useNiceScale: false,
+                        horizontalOff: false,
+                        verticalOff: true,
+                        unzoomEventType: 'dblclick.zoom'
+                    }
+                }
+            }, data: [{
+                "key": "doesntmatter",
+                "bar": true,
+                "values": values
+            }]
+        };
+    }
+
+    $scope.avgResponseTimesChart = getChart("multiBarHorizontalChart", $scope.avgResponseTimes, "name", "avgResponseTime", "", "Response time");
+    $scope.avgResponseTimesChart.options.chart.margin.left = 100;
+    $scope.avgResponseTimesChart.options.chart.yAxis.rotateLabels = -30;
+
+
+    $scope.downloadsPerHourOfDayChart = getChart("discreteBarChart", $scope.downloadsPerHourOfDay, "hour", "count", "Hour of day", 'Downloads');
+    $scope.downloadsPerDayOfWeekChart = getChart("discreteBarChart", $scope.downloadsPerDayOfWeek, "day", "count", "Day of week", 'Downloads');
+    $scope.downloadsPerDayOfWeekChart.options.chart.xAxis.rotateLabels = 0;
+
+    $scope.searchesPerHourOfDayChart = getChart("discreteBarChart", $scope.searchesPerHourOfDay, "hour", "count", "Hour of day", 'Searches');
+    $scope.searchesPerDayOfWeekChart = getChart("discreteBarChart", $scope.searchesPerDayOfWeek, "day", "count", "Day of week", 'Searches');
+    $scope.searchesPerDayOfWeekChart.options.chart.xAxis.rotateLabels = 0;
+
+
+    //Was unable to use the function above for this and gave up
+    $scope.resultsSharesChart = {
+        options: {
+            chart: {
+                type: 'multiBarChart',
+                height: 350,
+                margin: {
+                    top: 20,
+                    right: 20,
+                    bottom: 100,
+                    left: 45
+                },
+
+                clipEdge: true,
+                duration: 500,
+                stacked: false,
+                reduceXTicks: false,
+                showValues: true,
+                tooltip: {
+                    enabled: true,
+                    valueFormatter: function (d) {
+                        return d + "%";
+                    }
+                },
+                showControls: false,
+                xAxis: {
+                    axisLabel: '',
+                    showMaxMin: false,
+                    rotateLabels: 30,
+                    axisLabelDistance: 30,
+                    tickFormat: function (d) {
+                        return d;
+                    }
+                },
+                yAxis: {
+                    axisLabel: 'Share (%)',
+                    axisLabelDistance: -20,
+                    tickFormat: function (d) {
+                        return d;
+                    }
+                }
+            }
+        },
+
+        data: [
+            {
+                key: "Results",
+                values: _.map($scope.avgIndexerSearchResultsShares, function (stats) {
+                    return {series: 0, y: stats.avgResultsShare, x: stats.name}
+                })
+            },
+            {
+                key: "Unique results",
+                values: _.map($scope.avgIndexerSearchResultsShares, function (stats) {
+                    return {series: 1, y: stats.avgUniqueResults, x: stats.name}
+                })
+            }
+        ]
+    };
+
+    $scope.indexerDownloadSharesChart = {
+        options: {
+            chart: {
+                type: 'pieChart',
+                height: 500,
+                x: function (d) {
+                    return d.name;
+                },
+                y: function (d) {
+                    return d.share;
+                },
+                showLabels: true,
+                duration: 500,
+                labelThreshold: 0.01,
+                labelSunbeamLayout: true,
+                tooltip: {
+                    valueFormatter: function (d, i) {
+                        return $filter('number')(d, 2) + "%";
+                    }
+                },
+                legend: {
+                    margin: {
+                        top: 5,
+                        right: 35,
+                        bottom: 5,
+                        left: 0
+                    }
+                }
+            }
+        },
+        data: $scope.indexerDownloadShares
+    };
+
+
 }
-StatsController.$inject = ["$scope", "stats"];
+StatsController.$inject = ["$scope", "$filter", "stats"];
 
 //
 angular
@@ -1637,9 +1989,10 @@ function SearchService($http) {
 
     }
 
-    function loadMore(offset) {
+    function loadMore(offset, loadAll) {
         lastExecutedQuery.removeQuery("offset");
         lastExecutedQuery.addQuery("offset", offset);
+        lastExecutedQuery.addQuery("loadAll", loadAll ? true : false);
 
         return $http.get(lastExecutedQuery.toString()).then(processData);
     }
@@ -1648,6 +2001,7 @@ function SearchService($http) {
         var results = response.data.results;
         var indexersearches = response.data.indexersearches;
         var total = response.data.total;
+        var rejected = response.data.rejected;
         var resultsCount = results.length;
 
 
@@ -1662,7 +2016,7 @@ function SearchService($http) {
             }
         });
         
-        lastResults = {"results": results, "indexersearches": indexersearches, "total": total, "resultsCount": resultsCount};
+        lastResults = {"results": results, "indexersearches": indexersearches, "total": total, "resultsCount": resultsCount, "rejected": rejected};
         return lastResults;
     }
     
@@ -1718,6 +2072,7 @@ function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, gr
     $scope.results = SearchService.getLastResults().results;
     $scope.total = SearchService.getLastResults().total;
     $scope.resultsCount = SearchService.getLastResults().resultsCount;
+    $scope.rejected = SearchService.getLastResults().rejected;
     $scope.filteredResults = sortAndFilter($scope.results);
     stopBlocking();
 
@@ -1879,12 +2234,13 @@ function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, gr
     }
 
     $scope.loadMore = loadMore;
-    function loadMore() {
-        startBlocking("Loading more results...").then(function () {
-            SearchService.loadMore($scope.resultsCount).then(function (data) {
+    function loadMore(loadAll) {
+        startBlocking(loadAll ? "Loading all results..." : "Loading more results...").then(function () {
+            SearchService.loadMore($scope.resultsCount, loadAll).then(function (data) {
                 $scope.results = $scope.results.concat(data.results);
                 $scope.filteredResults = sortAndFilter($scope.results);
                 $scope.total = data.total;
+                $scope.rejected = data.rejected;
                 $scope.resultsCount += data.resultsCount;
                 stopBlocking();
             });
@@ -1912,9 +2268,9 @@ function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, gr
         $scope.$broadcast("invertSelection");
     };
     
-    $scope.toggleIndexerStatuses = function(indexerStatusesExpanded) {
-        //For some reason the value is actually the other way around
-        localStorageService.set("indexerStatusesExpanded", !indexerStatusesExpanded);
+    $scope.toggleIndexerStatuses = function() {
+        $scope.foo.indexerStatusesExpanded = !$scope.foo.indexerStatusesExpanded;
+        localStorageService.set("indexerStatusesExpanded", $scope.foo.indexerStatusesExpanded);
     };
 
     $scope.toggleDuplicatesDisplayed = function () {
@@ -2301,17 +2657,16 @@ angular
 function RestartService(blockUI, $timeout, $window, NzbHydraControlService) {
 
     return {
-        restart: restart,
-        countdownAndReload: countdownAndReload
+        restart: restart
     };
 
-    function countdownAndReload(message, timer) {
-        message = angular.isUndefined ? "" : " ";
-        
+
+    function internalCaR(message, timer) {
+
         if (timer >= 1) {
             blockUI.start(message + "Restarting. Will reload page in " + timer + " seconds...");
             $timeout(function () {
-                countdownAndReload(message, timer -1)
+                internalCaR(message, timer - 1)
             }, 1000);
         } else {
             $timeout(function () {
@@ -2319,13 +2674,13 @@ function RestartService(blockUI, $timeout, $window, NzbHydraControlService) {
                 $window.location.reload();
             }, 1000);
         }
-        
     }
     
     
 
     function restart(message) {
-        NzbHydraControlService.restart().then(countdownAndReload(message, 15),
+        message = angular.isDefined(message) ? message + " " : "";
+        NzbHydraControlService.restart().then(internalCaR(message, 15),
             function () {
                 growl.info("Unable to send restart command.");
             }
@@ -3751,7 +4106,6 @@ function ConfigFields($injector) {
                 }
             }
         );
-        console.log(fields);
         return fields;
     }
 
@@ -5536,13 +5890,20 @@ angular
 function BackupService($http) {
 
     return {
-        getBackupsList: getBackupsList
+        getBackupsList: getBackupsList,
+        restoreFromFile: restoreFromFile
     };
     
 
     function getBackupsList() {
         return $http.get('internalapi/getbackups').then(function (data) {
             return data.data.backups;
+        });
+    }
+
+    function restoreFromFile(filename) {
+        return $http.get('internalapi/restorefrombackupfile', {params:{filename: filename}}).then(function (response) {
+            return response;
         });
     }
 
