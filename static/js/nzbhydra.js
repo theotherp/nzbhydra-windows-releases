@@ -2469,10 +2469,7 @@ function SearchController($scope, $http, $stateParams, $state, SearchService, fo
                 $scope.maxsize = "";
             }
         }
-        
-        // _.each($scope.availableIndexers, function(indexer) {
-        //     indexer.activated = angular.isUndefined(indexer.categories) || indexer.categories.length == 0 || indexer.categories.indexOf($scope.category.name) > -1;
-        // })
+
         $scope.availableIndexers = getAvailableIndexers();
         
         
@@ -2643,7 +2640,6 @@ function SearchController($scope, $http, $stateParams, $state, SearchService, fo
     
 
     if ($scope.mode) {
-        console.log("Starting search in newly loaded search controller");
         $scope.startSearch();
     }
     
@@ -3860,6 +3856,7 @@ function ConfigService($http, $q, $cacheFactory) {
             .then(function (successresponse) {
                 console.log("Settings saved. Updating cache");
                 cache.put("config", newConfig);
+                invalidateSafe();
             }, function (errorresponse) {
                 console.log("Error saving settings: " + errorresponse);
             });
@@ -4583,15 +4580,6 @@ function ConfigFields($injector) {
                                 addonRight: {
                                     text: 'hours'
                                 }
-                            }
-                        },
-                        {
-                            key: 'removeDuplicatesExternal',
-                            type: 'horizontalSwitch',
-                            templateOptions: {
-                                type: 'switch',
-                                label: 'Remove API duplicates',
-                                help: 'Remove duplicates when searching via API'
                             }
                         },
                         {
