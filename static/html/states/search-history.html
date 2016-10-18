@@ -22,24 +22,24 @@
         <th>Date</th>
         <th>Query</th>
         <th>Category</th>
-        <th>ID key</th>
-        <th>ID value</th>
-        <th>Season</th>
-        <th>Episode</th>
+        <th>Additional parameters</th>
         <th>Access</th>
         <th>Username</th>
     </tr>
     </thead>
     <tbody>
     <tr dir-paginate="request in searchRequests | itemsPerPage: limit" total-items="totalRequests" current-page="pagination.current" pagination-id="searches">
-        <td>{{ request.time | reformatDate}}</td>
+        <td>{{ request.time | reformatDate }}</td>
         <td>
             <a href="" ng-click="openSearch(request)"><span class="glyphicon glyphicon-search"></span></a>
-            <span ng-class="{'history-title': request.movietitle != null || request.tvtitle != null}">
+            <span ng-class="{'history-title': request.movietitle != null || request.tvtitle != null || (request.query == null && request.identifier_key == null && request.season ==null && request.episode ==null)}">
                 {{ formatQuery(request) }}
+
             </span>
         </td>
         <td>{{ request.category }}</td>
+        <td ng-bind-html="formatAdditional(request)"></td>
+        <!--
         <td>{{ request.identifier_key }}</td>
         <td>
             <a target="_blank" ng-if="request.identifier_key=='imdbid'" href="http://www.imdb.com/title/tt{{ request.identifier_value }}/">{{ request.identifier_value }}</a>
@@ -48,6 +48,7 @@
         </td>
         <td>{{ request.season }}</td>
         <td>{{ request.episode }}</td>
+        -->
         <td>{{ request.internal ? "Internal" : "API"}}</td>
         <td>{{ request.username }}</td>
     </tr>

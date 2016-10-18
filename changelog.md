@@ -1,6 +1,23 @@
 # NZB Hydra changelog
 
 ----------
+### 0.2.152
+Fixed: Getting debug infos might fail with reverse proxy. 
+
+### 0.2.151
+Added: Store Ebook search data in the database. Redesigned search history.
+
+Added: Support for dereferer. Enabled by default. 
+
+Added: Support for HTTP(S) proxy.
+
+### 0.2.150
+Changed: Removed some 6box indexers from the presets.
+
+Fixed: Restart after update wouldn't work.
+
+Fixed: Database migration of 0.2.149 would not store new database version meaning the migration might've been done on every startup.
+
 ### 0.2.149
 Added: Show number of files, grabs and comments where indexers provide this information.
 

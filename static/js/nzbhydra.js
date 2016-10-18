@@ -601,6 +601,15 @@ nzbhydraapp.filter('unsafe', ["$sce", function ($sce) {
     return $sce.trustAsHtml;
 }]);
 
+nzbhydraapp.filter('dereferer', ["ConfigService", function (ConfigService) {
+    return function(url) {
+        if (ConfigService.getSafe().dereferer) {
+            return ConfigService.getSafe().dereferer.replace("$s", escape(url));
+        }
+        return url;
+    }
+}]);
+
 nzbhydraapp.config(["$provide", function ($provide) {
     $provide.decorator("$exceptionHandler", ['$delegate', '$injector', function ($delegate, $injector) {
         return function (exception, cause) {
@@ -1312,7 +1321,7 @@ function hydrabackup() {
 
         $scope.createAndDownloadBackupFile = function() {
 
-                $http({method: 'GET', url: '/internalapi/getbackup', responseType: 'arraybuffer'}).success(function (data, status, headers, config) {
+                $http({method: 'GET', url: 'internalapi/getbackup', responseType: 'arraybuffer'}).success(function (data, status, headers, config) {
                     var a = document.createElement('a');
                     var blob = new Blob([data], {'type': "application/octet-stream"});
                     a.href = URL.createObjectURL(blob);
@@ -1516,7 +1525,7 @@ function UpdateService($http, growl, blockUI, RestartService) {
         blockUI.start("Updating. Please stand by...");
         $http.get("internalapi/update").then(function (data) {
                 if (data.data.success) {
-                    RestartService.countdownAndReload("Update complete.", 15);
+                    RestartService.restart("Update complete.", 15);
                 } else {
                     blockUI.reset();
                     growl.info("An error occurred while updating. Please check the logs.");
@@ -1637,7 +1646,7 @@ function SystemController($scope, $state, $http, growl, RestartService, NzbHydra
     };
 
     $scope.downloadDebuggingInfos = function() {
-        $http({method: 'GET', url: '/internalapi/getdebugginginfos', responseType: 'arraybuffer'}).success(function (data, status, headers, config) {
+        $http({method: 'GET', url: 'internalapi/getdebugginginfos', responseType: 'arraybuffer'}).success(function (data, status, headers, config) {
             var a = document.createElement('a');
             var blob = new Blob([data], {'type': "application/octet-stream"});
             a.href = URL.createObjectURL(blob);
@@ -2294,7 +2303,7 @@ angular
     .controller('SearchHistoryController', SearchHistoryController);
 
 
-function SearchHistoryController($scope, $state, StatsService, history) {
+function SearchHistoryController($scope, $state, StatsService, history, $sce, $filter) {
     $scope.type = "All";
     $scope.limit = 100;
     $scope.pagination = {
@@ -2303,7 +2312,6 @@ function SearchHistoryController($scope, $state, StatsService, history) {
     $scope.isLoaded = true;
     $scope.searchRequests = history.data.searchRequests;
     $scope.totalRequests = history.data.totalRequests;
-
 
     $scope.pageChanged = function (newPage) {
         getSearchRequestsPage(newPage);
@@ -2374,12 +2382,58 @@ function SearchHistoryController($scope, $state, StatsService, history) {
         if (request.tvtitle != null) {
             return request.tvtitle;
         }
+
+        if (!request.query && !request.identifier_key && !request.season && !request.episode) {
+            return "Update query";
+        }
         return request.query;
-    }
+    };
+
+    $scope.formatAdditional = function(request) {
+        var result = [];
+        //ID key: ID value
+        //season
+        //episode
+        //author
+        //title
+        if (request.identifier_key) {
+            var href;
+            var key;
+            if (request.identifier_key == "imdbid") {
+                key = "IMDB ID";
+                href = "https://www.imdb.com/title/tt"
+            } else  if (request.identifier_key == "tvdbid") {
+                key = "TVDB ID";
+                href = "https://thetvdb.com/?tab=series&id="
+            } else if (request.identifier_key == "rid") {
+                key = "TVRage ID";
+                href = "internalapi/redirect_rid?rid="
+            } else if (request.identifier_key == "tmdb") {
+                key = "TMDV ID";
+                href = "https://www.themoviedb.org/movie/"
+            }
+            href = href + request.identifier_value;
+            href = $filter("dereferer")(href);
+            result.push(key + ": " + '<a target="_blank" href="' + href + '">' + request.identifier_value + "</a>");
+        }
+        if (request.season) {
+            result.push("Season: " + request.season);
+        }
+        if (request.episode) {
+            result.push("Episode: " + request.episode);
+        }
+        if (request.author) {
+            result.push("Author: " + request.author);
+        }
+        if (request.title) {
+            result.push("Title: " + request.title);
+        }
+        return $sce.trustAsHtml(result.join(", "));
+    };
 
 
 }
-SearchHistoryController.$inject = ["$scope", "$state", "StatsService", "history"];
+SearchHistoryController.$inject = ["$scope", "$state", "StatsService", "history", "$sce", "$filter"];
 
 angular
     .module('nzbhydraApp')
@@ -4206,6 +4260,32 @@ function ConfigFields($injector) {
                             }
                         },
                         {
+                            key: 'httpProxy',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'text',
+                                label: 'HTTP proxy',
+                                placeholder: 'http://user:pass@10.0.0.1:1080',
+                                help: "IPv4 only"
+                            },
+                            watcher: {
+                                listener: restartListener
+                            }
+                        },
+                        {
+                            key: 'httpsProxy',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'text',
+                                label: 'HTTPS proxy',
+                                placeholder: 'http://user:pass@10.0.0.1:1090',
+                                help: "IPv4 only"
+                            },
+                            watcher: {
+                                listener: restartListener
+                            }
+                        },
+                        {
                             key: 'sslcert',
                             hideExpression: '!model.ssl',
                             type: 'horizontalInput',
@@ -4270,6 +4350,15 @@ function ConfigFields($injector) {
                             },
                             validators: {
                                 apikey: regexValidator(/^[a-zA-Z0-9]*$/, "API key must only contain numbers and digits", false)
+                            }
+                        },
+                        {
+                            key: 'dereferer',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'text',
+                                label: 'Dereferer',
+                                help: 'Redirect external links to hide your instance. Insert $s for target URL. Delete to disable.'
                             }
                         }
                     ]
@@ -4816,12 +4905,8 @@ function getIndexerPresets() {
             host: "https://6box.me"
         },
         {
-            name: "6box nzedb",
-            host: "https://nzedb.6box.me"
-        },
-        {
-            name: "6box nntmux",
-            host: "https://nn-tmux.6box.me"
+            name: "6box sptweb",
+            host: "https://6box.me/spotweb"
         },
         {
             name: "DogNZB",
