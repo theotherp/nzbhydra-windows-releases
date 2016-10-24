@@ -1,6 +1,16 @@
 # NZB Hydra changelog
 
 ----------
+### 0.2.154
+Added: Torrent search compatible with [Cardigann](https://github.com/cardigann/cardigann/).
+
+Changed: (Hopefully) better algorithm to get details links for NZBs.
+
+Changed: Redesigned results details (again). Removed number of files and comments, replaced text with icons, show comment icon if comments are available. Known issue: No tooltip for fuzzy NFO links.
+
+### 0.2.153
+Nothing important.
+
 ### 0.2.152
 Fixed: Getting debug infos might fail with reverse proxy. 
 
