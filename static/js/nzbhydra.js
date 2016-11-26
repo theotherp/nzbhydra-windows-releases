@@ -1585,7 +1585,7 @@ angular
     .module('nzbhydraApp')
     .controller('SystemController', SystemController);
 
-function SystemController($scope, $state, $http, growl, RestartService, NzbHydraControlService) {
+function SystemController($scope, $state, $http, growl, RestartService, ModalService, NzbHydraControlService) {
 
 
     $scope.shutdown = function () {
@@ -1599,6 +1599,24 @@ function SystemController($scope, $state, $http, growl, RestartService, NzbHydra
 
     $scope.restart = function () {
         RestartService.restart();
+    };
+
+    $scope.deleteLogAndDatabase = function () {
+        ModalService.open("Delete log and db", "Are you absolutely sure you want to delete your database and log files? Hydra will restart to do that.",  {
+            yes: {
+                onYes: function () {
+                    NzbHydraControlService.deleteLogAndDb();
+                    RestartService.countdown();
+                },
+                text: "Yes, delete log and database"
+            },
+            no: {
+                onCancel: function () {
+
+                },
+                text: "Nah"
+            }
+        });
     };
     
 
@@ -1659,7 +1677,7 @@ function SystemController($scope, $state, $http, growl, RestartService, NzbHydra
     }
     
 }
-SystemController.$inject = ["$scope", "$state", "$http", "growl", "RestartService", "NzbHydraControlService"];
+SystemController.$inject = ["$scope", "$state", "$http", "growl", "RestartService", "ModalService", "NzbHydraControlService"];
 
 angular
     .module('nzbhydraApp')
@@ -1673,8 +1691,8 @@ function StatsService($http) {
         getDownloadHistory: getDownloadHistory
     };
 
-    function getStats() {
-        return $http.get("internalapi/getstats").success(function (response) {
+    function getStats(after, before) {
+        return $http.get("internalapi/getstats", {params: {after:after, before:before}}).success(function (response) {
             return response.data;
         });
     }
@@ -1724,18 +1742,134 @@ angular
     .module('nzbhydraApp')
     .controller('StatsController', StatsController);
 
-function StatsController($scope, $filter, stats) {
+function StatsController($scope, $filter, StatsService, blockUI, stats) {
 
-    stats = stats.data;
-    $scope.nzbDownloads = null;
-    $scope.avgResponseTimes = stats.avgResponseTimes;
-    $scope.avgIndexerSearchResultsShares = stats.avgIndexerSearchResultsShares;
-    $scope.avgIndexerAccessSuccesses = stats.avgIndexerAccessSuccesses;
-    $scope.indexerDownloadShares = stats.indexerDownloadShares;
-    $scope.downloadsPerHourOfDay = stats.timeBasedDownloadStats.perHourOfDay;
-    $scope.downloadsPerDayOfWeek = stats.timeBasedDownloadStats.perDayOfWeek;
-    $scope.searchesPerHourOfDay = stats.timeBasedSearchStats.perHourOfDay;
-    $scope.searchesPerDayOfWeek = stats.timeBasedSearchStats.perDayOfWeek;
+    $scope.dateOptions = {
+        dateDisabled: false,
+        formatYear: 'yy',
+        startingDay: 1
+    };
+
+    $scope.afterDate = null;
+    $scope.beforeDate = null;
+
+    $scope.openAfter = function () {
+        $scope.after.opened = true;
+    };
+
+    $scope.openBefore = function () {
+        $scope.before.opened = true;
+    };
+
+    $scope.after = {
+        opened: false
+    };
+
+    $scope.before = {
+        opened: false
+    };
+
+
+    function updateStats() {
+        blockUI.start("Updating stats...");
+        var after = $scope.afterDate != null ? $scope.afterDate.getTime() / 1000 : null;
+        var before = $scope.beforeDate != null ? $scope.beforeDate.getTime() / 1000 : null;
+        StatsService.get(after, before).then(function(stats) {
+            $scope.setStats(stats);
+        });
+
+        blockUI.reset();
+    }
+
+    $scope.$watch('beforeDate', function () {
+        updateStats();
+    });
+
+    $scope.$watch('afterDate', function () {
+        updateStats();
+    });
+
+    $scope.formats = ['dd-MMMM-yyyy', 'yyyy/MM/dd', 'dd.MM.yyyy', 'shortDate'];
+    $scope.format = $scope.formats[0];
+    $scope.altInputFormats = ['M!/d!/yyyy'];
+
+    $scope.setStats = function (stats) {
+        stats = stats.data;
+
+        $scope.nzbDownloads = null;
+        $scope.avgResponseTimes = stats.avgResponseTimes;
+        $scope.avgIndexerSearchResultsShares = stats.avgIndexerSearchResultsShares;
+        $scope.avgIndexerAccessSuccesses = stats.avgIndexerAccessSuccesses;
+        $scope.indexerDownloadShares = stats.indexerDownloadShares;
+        $scope.downloadsPerHourOfDay = stats.timeBasedDownloadStats.perHourOfDay;
+        $scope.downloadsPerDayOfWeek = stats.timeBasedDownloadStats.perDayOfWeek;
+        $scope.searchesPerHourOfDay = stats.timeBasedSearchStats.perHourOfDay;
+        $scope.searchesPerDayOfWeek = stats.timeBasedSearchStats.perDayOfWeek;
+
+
+        var numIndexers = $scope.avgResponseTimes.length;
+
+        $scope.avgResponseTimesChart = getChart("multiBarHorizontalChart", $scope.avgResponseTimes, "name", "avgResponseTime", "", "Response time");
+        $scope.avgResponseTimesChart.options.chart.margin.left = 100;
+        $scope.avgResponseTimesChart.options.chart.yAxis.rotateLabels = -30;
+        var avgResponseTimesChartHeight = Math.max(numIndexers * 30, 350);
+        $scope.avgResponseTimesChart.options.chart.height = avgResponseTimesChartHeight;
+
+        $scope.resultsSharesChart = getResultsSharesChart();
+
+        var rotation = 30;
+        if (numIndexers > 30) {
+            rotation = 70;
+        }
+        $scope.resultsSharesChart.options.chart.xAxis.rotateLabels = rotation;
+        $scope.resultsSharesChart.options.chart.height = avgResponseTimesChartHeight;
+
+        $scope.downloadsPerHourOfDayChart = getChart("discreteBarChart", $scope.downloadsPerHourOfDay, "hour", "count", "Hour of day", 'Downloads');
+        $scope.downloadsPerDayOfWeekChart = getChart("discreteBarChart", $scope.downloadsPerDayOfWeek, "day", "count", "Day of week", 'Downloads');
+        $scope.downloadsPerDayOfWeekChart.options.chart.xAxis.rotateLabels = 0;
+
+        $scope.searchesPerHourOfDayChart = getChart("discreteBarChart", $scope.searchesPerHourOfDay, "hour", "count", "Hour of day", 'Searches');
+        $scope.searchesPerDayOfWeekChart = getChart("discreteBarChart", $scope.searchesPerDayOfWeek, "day", "count", "Day of week", 'Searches');
+        $scope.searchesPerDayOfWeekChart.options.chart.xAxis.rotateLabels = 0;
+
+        $scope.indexerDownloadSharesChart = {
+            options: {
+                chart: {
+                    type: 'pieChart',
+                    height: 500,
+                    x: function (d) {
+                        return d.name;
+                    },
+                    y: function (d) {
+                        return d.share;
+                    },
+                    showLabels: true,
+                    duration: 500,
+                    labelThreshold: 0.01,
+                    labelSunbeamLayout: true,
+                    tooltip: {
+                        valueFormatter: function (d, i) {
+                            return $filter('number')(d, 2) + "%";
+                        }
+                    },
+                    legend: {
+                        margin: {
+                            top: 5,
+                            right: 35,
+                            bottom: 5,
+                            left: 0
+                        }
+                    }
+                }
+            },
+            data: $scope.indexerDownloadShares
+        };
+
+        $scope.indexerDownloadSharesChart.options.chart.height = Math.min(Math.max(numIndexers * 40, 350), 900);
+    };
+
+    $scope.setStats(stats);
+
 
     function getChart(chartType, values, xKey, yKey, xAxisLabel, yAxisLabel) {
         return {
@@ -1804,116 +1938,71 @@ function StatsController($scope, $filter, stats) {
         };
     }
 
-    $scope.avgResponseTimesChart = getChart("multiBarHorizontalChart", $scope.avgResponseTimes, "name", "avgResponseTime", "", "Response time");
-    $scope.avgResponseTimesChart.options.chart.margin.left = 100;
-    $scope.avgResponseTimesChart.options.chart.yAxis.rotateLabels = -30;
-
-
-    $scope.downloadsPerHourOfDayChart = getChart("discreteBarChart", $scope.downloadsPerHourOfDay, "hour", "count", "Hour of day", 'Downloads');
-    $scope.downloadsPerDayOfWeekChart = getChart("discreteBarChart", $scope.downloadsPerDayOfWeek, "day", "count", "Day of week", 'Downloads');
-    $scope.downloadsPerDayOfWeekChart.options.chart.xAxis.rotateLabels = 0;
-
-    $scope.searchesPerHourOfDayChart = getChart("discreteBarChart", $scope.searchesPerHourOfDay, "hour", "count", "Hour of day", 'Searches');
-    $scope.searchesPerDayOfWeekChart = getChart("discreteBarChart", $scope.searchesPerDayOfWeek, "day", "count", "Day of week", 'Searches');
-    $scope.searchesPerDayOfWeekChart.options.chart.xAxis.rotateLabels = 0;
-
-
     //Was unable to use the function above for this and gave up
-    $scope.resultsSharesChart = {
-        options: {
-            chart: {
-                type: 'multiBarChart',
-                height: 350,
-                margin: {
-                    top: 20,
-                    right: 20,
-                    bottom: 100,
-                    left: 45
-                },
-
-                clipEdge: true,
-                duration: 500,
-                stacked: false,
-                reduceXTicks: false,
-                showValues: true,
-                tooltip: {
-                    enabled: true,
-                    valueFormatter: function (d) {
-                        return d + "%";
-                    }
-                },
-                showControls: false,
-                xAxis: {
-                    axisLabel: '',
-                    showMaxMin: false,
-                    rotateLabels: 30,
-                    axisLabelDistance: 30,
-                    tickFormat: function (d) {
-                        return d;
-                    }
-                },
-                yAxis: {
-                    axisLabel: 'Share (%)',
-                    axisLabelDistance: -20,
-                    tickFormat: function (d) {
-                        return d;
-                    }
-                }
-            }
-        },
-
-        data: [
-            {
-                key: "Results",
-                values: _.map($scope.avgIndexerSearchResultsShares, function (stats) {
-                    return {series: 0, y: stats.avgResultsShare, x: stats.name}
-                })
-            },
-            {
-                key: "Unique results",
-                values: _.map($scope.avgIndexerSearchResultsShares, function (stats) {
-                    return {series: 1, y: stats.avgUniqueResults, x: stats.name}
-                })
-            }
-        ]
-    };
-
-    $scope.indexerDownloadSharesChart = {
-        options: {
-            chart: {
-                type: 'pieChart',
-                height: 500,
-                x: function (d) {
-                    return d.name;
-                },
-                y: function (d) {
-                    return d.share;
-                },
-                showLabels: true,
-                duration: 500,
-                labelThreshold: 0.01,
-                labelSunbeamLayout: true,
-                tooltip: {
-                    valueFormatter: function (d, i) {
-                        return $filter('number')(d, 2) + "%";
-                    }
-                },
-                legend: {
+    function getResultsSharesChart() {
+        return {
+            options: {
+                chart: {
+                    type: 'multiBarChart',
+                    height: 350,
                     margin: {
-                        top: 5,
-                        right: 35,
-                        bottom: 5,
-                        left: 0
+                        top: 20,
+                        right: 20,
+                        bottom: 100,
+                        left: 45
+                    },
+
+                    clipEdge: true,
+                    duration: 500,
+                    stacked: false,
+                    reduceXTicks: false,
+                    showValues: true,
+                    tooltip: {
+                        enabled: true,
+                        valueFormatter: function (d) {
+                            return d + "%";
+                        }
+                    },
+                    showControls: false,
+                    xAxis: {
+                        axisLabel: '',
+                        showMaxMin: false,
+                        rotateLabels: 30,
+                        axisLabelDistance: 30,
+                        tickFormat: function (d) {
+                            return d;
+                        }
+                    },
+                    yAxis: {
+                        axisLabel: 'Share (%)',
+                        axisLabelDistance: -20,
+                        tickFormat: function (d) {
+                            return d;
+                        }
                     }
                 }
-            }
-        },
-        data: $scope.indexerDownloadShares
-    };
+            },
+
+            data: [
+                {
+                    key: "Results",
+                    values: _.map($scope.avgIndexerSearchResultsShares, function (stats) {
+                        return {series: 0, y: stats.avgResultsShare, x: stats.name}
+                    })
+                },
+                {
+                    key: "Unique results",
+                    values: _.map($scope.avgIndexerSearchResultsShares, function (stats) {
+                        return {series: 1, y: stats.avgUniqueResults, x: stats.name}
+                    })
+                }
+            ]
+        };
+    }
 
 
 }
-StatsController.$inject = ["$scope", "$filter", "stats"];
+StatsController.$inject = ["$scope", "$filter", "StatsService", "blockUI", "stats"];
 
 //
 angular
@@ -2730,10 +2819,11 @@ angular
     .module('nzbhydraApp')
     .factory('RestartService', RestartService);
 
-function RestartService(blockUI, $timeout, $window, NzbHydraControlService) {
+function RestartService(blockUI, $timeout, $window, growl, NzbHydraControlService) {
 
     return {
-        restart: restart
+        restart: restart,
+        countdown: countdown
     };
 
 
@@ -2752,7 +2842,9 @@ function RestartService(blockUI, $timeout, $window, NzbHydraControlService) {
         }
     }
     
-    
+    function countdown() {
+        internalCaR("", 15);
+    }
 
     function restart(message) {
         message = angular.isDefined(message) ? message + " " : "";
@@ -2763,7 +2855,7 @@ function RestartService(blockUI, $timeout, $window, NzbHydraControlService) {
         )
     }
 }
-RestartService.$inject = ["blockUI", "$timeout", "$window", "NzbHydraControlService"];
+RestartService.$inject = ["blockUI", "$timeout", "$window", "growl", "NzbHydraControlService"];
 
 angular
     .module('nzbhydraApp')
@@ -2773,7 +2865,8 @@ function NzbHydraControlService($http) {
 
     return {
         restart: restart,
-        shutdown: shutdown
+        shutdown: shutdown,
+        deleteLogAndDb: deleteLogAndDb
     };
 
     function restart() {
@@ -2782,6 +2875,10 @@ function NzbHydraControlService($http) {
 
     function shutdown() {
         return $http.get("internalapi/shutdown");
+    }
+
+    function deleteLogAndDb() {
+        return $http.get("internalapi/deleteloganddb");
     }
 }
 NzbHydraControlService.$inject = ["$http"];
@@ -2800,14 +2897,18 @@ function NzbDownloadService($http, ConfigService, DownloaderCategoriesService) {
     return service;
 
     function sendNzbAddCommand(downloader, searchresultids, category) {
-        return $http.put("internalapi/addnzbs", {downloader: downloader.name, searchresultids: angular.toJson(searchresultids), category: category});
+        var params = {downloader: downloader.name, searchresultids: angular.toJson(searchresultids)};
+        if (category != "No category") {
+            params["category"] = category;
+        }
+        return $http.put("internalapi/addnzbs", params);
     }
     
     function download(downloader, searchresultids) {
         
         var category = downloader.defaultCategory;
         
-        if (_.isUndefined(category) || category == "" || category == null) {
+        if ((_.isUndefined(category) || category == "" || category == null) && category != "No category") {
             return DownloaderCategoriesService.openCategorySelection(downloader).then(function (category) {
                 return sendNzbAddCommand(downloader, searchresultids, category)
             }, function (error) {
@@ -4279,7 +4380,7 @@ function ConfigFields($injector) {
                             templateOptions: {
                                 type: 'text',
                                 label: 'SOCKS proxy',
-                                placeholder: '127.0.0.1:1080',
+                                placeholder: 'socks5://user:pass@127.0.0.1:1080',
                                 help: "IPv4 only"
                             },
                             watcher: {
@@ -4305,7 +4406,7 @@ function ConfigFields($injector) {
                             templateOptions: {
                                 type: 'text',
                                 label: 'HTTPS proxy',
-                                placeholder: 'http://user:pass@10.0.0.1:1090',
+                                placeholder: 'https://user:pass@10.0.0.1:1090',
                                 help: "IPv4 only"
                             },
                             watcher: {
@@ -4356,7 +4457,8 @@ function ConfigFields($injector) {
                                 label: 'Theme',
                                 help: 'Reload page after saving',
                                 options: [
-                                    {name: 'Default', value: 'default'},
+                                    {name: 'Grey', value: 'grey'},
+                                    {name: 'Bright', value: 'bright'},
                                     {name: 'Dark', value: 'dark'}
                                 ]
                             }
@@ -5071,7 +5173,6 @@ function getIndexerBoxFields(model, parentModel, isInitial, injector) {
                 type: 'horizontalInput',
                 templateOptions: {
                     type: 'text',
-                    required: true,
                     label: 'API Key'
                 },
                 watcher: {
@@ -5472,7 +5573,8 @@ function getDownloaderBoxFields(model, parentModel, isInitial) {
             type: 'horizontalInput',
             templateOptions: {
                 type: 'text',
-                label: 'Username'
+                label: 'Username',
+                help: model.type == "nzbget" ? 'Only alphanumeric usernames are guaranteed to work' : ""
             },
             watcher: {
                 listener: function (field, newValue, oldValue, scope) {
@@ -5487,7 +5589,8 @@ function getDownloaderBoxFields(model, parentModel, isInitial) {
             type: 'horizontalInput',
             templateOptions: {
                 type: 'password',
-                label: 'Password'
+                label: 'Password',
+                help: model.type == "nzbget" ? 'See username' : ""
             },
             watcher: {
                 listener: function (field, newValue, oldValue, scope) {
@@ -5525,7 +5628,7 @@ function getDownloaderBoxFields(model, parentModel, isInitial) {
             templateOptions: {
                 type: 'text',
                 label: 'Default category',
-                help: 'When adding NZBs this category will be used instead of asking for the category',
+                help: 'When adding NZBs this category will be used instead of asking for the category. Write "No category" to let the downloader decide.',
                 placeholder: 'Ask when downloading'
             }
         },

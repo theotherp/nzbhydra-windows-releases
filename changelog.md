@@ -1,6 +1,25 @@
 # NZB Hydra changelog
 
 ----------
+### 0.2.169
+Added: Allow providing username and password for socks proxy. Be aware that only direct calls from Hydra will go through proxies. Calls to git for example will not. See [#430](https://github.com/theotherp/nzbhydra/issues/430).
+
+Added: Allow not defining a category when sending NZBs to a downloader. In that case the downloader will decide which category to use. See [#434](https://github.com/theotherp/nzbhydra/issues/434).
+
+Added: Show stats for a certain time span. See [#431](https://github.com/theotherp/nzbhydra/issues/431).
+
+Added: Option to truncate database and log file. Requested by a user running the synology package where database and log files are not available easily.
+
+Added: New "dark" theme which is basically just a darker grey theme. Supplied by /u/SabreWolF9. Grey theme is now default. 
+
+Changed: API keys are not mandatory for indexers. Apparently there are som which don't require one or even throw an error when one is provided. Whatever. See [#427](https://github.com/theotherp/nzbhydra/issues/427)
+
+Changed: Some indexers do support more search types or IDs than they say in their caps. So search capabilities of an indexer (searching by IMDB ID, TVDB ID, etc.) are now always determined by "brute force" instead of relying on the data provided in the caps. That means that the caps check will take a lot more time (up to 6 queries) but be more precise. See [#433](https://github.com/theotherp/nzbhydra/issues/433).    
+
+Fixed: Calls to /details/ would not use dereferer. See [#434](https://github.com/theotherp/nzbhydra/issues/439).
+
+Fixed: Database was not properly shut down.
+
 ### 0.2.168
 Changed: I lost access to my old bitcoin wallet. I created a new one and updated the readme. As I don't have any means of "converting" money to bitcoin and have some services that I pay with Bitcoin I changed my policy and am now open to receive donations ;-)
 
