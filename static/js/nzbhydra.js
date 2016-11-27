@@ -1829,10 +1829,14 @@ function StatsController($scope, $filter, StatsService, blockUI, stats) {
         $scope.resultsSharesChart.options.chart.height = avgResponseTimesChartHeight;
 
         $scope.downloadsPerHourOfDayChart = getChart("discreteBarChart", $scope.downloadsPerHourOfDay, "hour", "count", "Hour of day", 'Downloads');
+        $scope.downloadsPerHourOfDayChart.options.chart.xAxis.rotateLabels = 0;
+
         $scope.downloadsPerDayOfWeekChart = getChart("discreteBarChart", $scope.downloadsPerDayOfWeek, "day", "count", "Day of week", 'Downloads');
         $scope.downloadsPerDayOfWeekChart.options.chart.xAxis.rotateLabels = 0;
 
         $scope.searchesPerHourOfDayChart = getChart("discreteBarChart", $scope.searchesPerHourOfDay, "hour", "count", "Hour of day", 'Searches');
+        $scope.searchesPerHourOfDayChart.options.chart.xAxis.rotateLabels = 0;
+
         $scope.searchesPerDayOfWeekChart = getChart("discreteBarChart", $scope.searchesPerDayOfWeek, "day", "count", "Day of week", 'Searches');
         $scope.searchesPerDayOfWeekChart.options.chart.xAxis.rotateLabels = 0;
 
@@ -4633,6 +4637,15 @@ function ConfigFields($injector) {
                                 type: 'switch',
                                 label: 'Open browser on startup'
                             }
+                        },
+                        {
+                            key: 'shutdownForRestart',
+                            type: 'horizontalSwitch',
+                            templateOptions: {
+                                type: 'switch',
+                                label: 'Shutdown to restart',
+                                help: 'When run with a service manager which automatically restarts Hydra enable this to prevent duplicate instances'
+                            }
                         }
                     ]
                 }
@@ -4774,7 +4787,7 @@ function ConfigFields($injector) {
                                 type: 'select',
                                 label: 'HTML parser',
                                 options: [
-                                    {name: 'Default BS (slow)', value: 'html.parser'},
+                                    {name: 'Default BS (slower)', value: 'html.parser'},
                                     {name: 'LXML (faster, needs to be installed separately)', value: 'lxml'}
                                 ]
                             }
