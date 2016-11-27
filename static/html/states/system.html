@@ -1,0 +1,39 @@
+<uib-tabset style="text-align: center">
+    
+    <uib-tab heading="Control" active="tabs[0].active" select="goToState(0)">
+        <button class="btn btn-default" type="button" ng-click="shutdown()">Shutdown</button>
+        <button class="btn btn-default" type="button" ng-click="restart()">Restart</button>
+        <br>
+        <button class="btn btn-danger" type="button" ng-click="deleteLogAndDatabase()" style="margin-top: 20px">Delete log and database</button>
+        <br>
+        <button class="btn btn-info" type="button" ng-click="forceUpdate()" style="margin-top: 20px">Force update</button>
+
+    </uib-tab>
+
+    <uib-tab heading="Updates" active="tabs[1].active" select="goToState(1)">
+        <div class="system-tab-content">
+            <span ng-if="tabs[1].active" hydraupdates></span>
+        </div>
+    </uib-tab>
+
+    <uib-tab heading="Log" active="tabs[2].active" select="goToState(2)">
+        <hydralog ng-if="tabs[2].active"></hydralog>
+    </uib-tab>
+
+    <uib-tab heading="Backup" active="tabs[3].active" select="goToState(3)">
+        <hydrabackup ng-if="tabs[3].active"></hydrabackup>
+    </uib-tab>
+
+    <uib-tab heading="Bugreport" active="tabs[4].active" select="goToState(4)">
+        <div class="system-tab-content">
+            <ng-include src="'static/html/bugreport.html'"></ng-include>
+        </div>
+    </uib-tab>
+
+    <uib-tab heading="About" active="tabs[5].active" select="goToState(5)">
+        <div class="system-tab-content">
+        <ng-include src="'static/html/about.html'"></ng-include>
+            </div>
+    </uib-tab>
+</uib-tabset>
+
