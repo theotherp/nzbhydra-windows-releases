@@ -1,15 +1,40 @@
 # NZB Hydra changelog
 
 ----------
+### 0.2.182
+Added: Button to scroll to bottom of log file and option to update log file automatically. See [#497](https://github.com/theotherp/nzbhydra/issues/497) and [#498](https://github.com/theotherp/nzbhydra/issues/498).
+
+Added: Options to control when a new log file is started (depending on size or time), how many to keep and if a new file should be started on startup. See [#496](https://github.com/theotherp/nzbhydra/issues/496).
+
+Added: Data grid for search history which allows filtering and sorting. Not fully implemented yet but will be used for search and download history, with proper category / date filtering. See [#479](https://github.com/theotherp/nzbhydra/issues/479).  
+
+Changed: Removed womble :-(
+
+Fixed: Show better error message when connection test to indexer failed. See [#500](https://github.com/theotherp/nzbhydra/issues/500).
+
+### 0.2.181
+Fixed: NZBGeek and forbidden words don't play well together. See [#493](https://github.com/theotherp/nzbhydra/issues/493).
+
+Fixed: Error in ignoring posters introduced in 0.2.180.
+
+### 0.2.180
+Added: Ignore results by certain posters and/or from certain groups. See [#478](https://github.com/theotherp/nzbhydra/issues/478).
+
+Added: Set user agent per indexer. Few will ever need this. See [#482](https://github.com/theotherp/nzbhydra/issues/482).
+
+Added: Allow deleting of preconfigured indexers. Of course they can be added later again. See [#480](https://github.com/theotherp/nzbhydra/issues/480).
+
+Fixed: Manually checking indexer capabilities didn't work. See [#477](https://github.com/theotherp/nzbhydra/issues/477).
+
 ### 0.2.179
 Added: Scripts for windows release to easily create a windows service.
 
-Fixed: Indexer username / password were not used for connection and capabilities check. See [#465](https://github.com/theotherp/nzbhydra/issues/465)
+Fixed: Indexer username / password were not used for connection and capabilities check. See [#465](https://github.com/theotherp/nzbhydra/issues/465).
 
 Misc: I've only had 70 survey responses so far compared to nearly 300 on the first survey. Please take part, if possible.
 
 ### 0.2.178
-Fixed: Duplicate detection age and size were ignored. See [#463](https://github.com/theotherp/nzbhydra/issues/463)
+Fixed: Duplicate detection age and size were ignored. See [#463](https://github.com/theotherp/nzbhydra/issues/463).
 
 Fixed: When opening the browser on startup is enabled the configured host IP is used instead of 127.0.0.1. Apparently there are cases where that doesn't work for some reason. 
 

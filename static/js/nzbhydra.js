@@ -1,4 +1,6 @@
-var nzbhydraapp = angular.module('nzbhydraApp', ['angular-loading-bar', 'cgBusy', 'ui.bootstrap', 'ipCookie', 'angular-growl', 'angular.filter', 'filters', 'ui.router', 'blockUI', 'mgcrea.ngStrap', 'angularUtils.directives.dirPagination', 'nvd3', 'formly', 'formlyBootstrap', 'frapontillo.bootstrap-switch', 'ui.select', 'ngSanitize', 'checklist-model', 'ngAria', 'ngMessages', 'ui.router.title', 'satellizer', 'LocalStorageModule', 'angular.filter', 'ngFileUpload']);
+agGrid.initialiseAgGridWithAngular1(angular);
+
+var nzbhydraapp = angular.module('nzbhydraApp', ['angular-loading-bar', 'cgBusy', 'ui.bootstrap', 'ipCookie', 'angular-growl', 'angular.filter', 'filters', 'ui.router', 'blockUI', 'mgcrea.ngStrap', 'angularUtils.directives.dirPagination', 'nvd3', 'formly', 'formlyBootstrap', 'frapontillo.bootstrap-switch', 'ui.select', 'ngSanitize', 'checklist-model', 'ngAria', 'ngMessages', 'ui.router.title', 'satellizer', 'LocalStorageModule', 'angular.filter', 'ngFileUpload', 'agGrid']);
 
 angular.module('nzbhydraApp').config(["$stateProvider", "$urlRouterProvider", "$locationProvider", "blockUIConfig", "$urlMatcherFactoryProvider", "$authProvider", "localStorageServiceProvider", "bootstrapped", function ($stateProvider, $urlRouterProvider, $locationProvider, blockUIConfig, $urlMatcherFactoryProvider, $authProvider, localStorageServiceProvider, bootstrapped) {
 
@@ -960,16 +962,64 @@ angular
     .directive('hydralog', hydralog);
 
 function hydralog() {
-    controller.$inject = ["$scope", "$http", "$sce"];
+    controller.$inject = ["$scope", "$http", "$sce", "$interval", "localStorageService"];
     return {
-        template: '<div cg-busy="{promise:logPromise,message:\'Loading log file\'}"><pre ng-bind-html="log" style="text-align: left; height: 65vh; overflow-y: scroll"></pre></div>',
+        //template: '<div cg-busy="{promise:logPromise,message:\'Loading log file\'}"><pre ng-bind-html="log" style="text-align: left; height: 65vh; overflow-y: scroll"></pre></div>',
+        templateUrl: "static/html/directives/log.html",
+
         controller: controller
     };
 
-    function controller($scope, $http, $sce) {
-        $scope.logPromise = $http.get("internalapi/getlogs").success(function (data) {
-            $scope.log = $sce.trustAsHtml(data.log);
-        });
+    function controller($scope, $http, $sce, $interval, localStorageService) {
+
+        $scope.tailInterval = null;
+        $scope.doUpdateLog = localStorageService.get("doUpdateLog") != null ? localStorageService.get("doUpdateLog") : false;
+        $scope.doTailLog = localStorageService.get("doTailLog") != null ? localStorageService.get("doTailLog") : false;
+
+
+        function getAndShowLog() {
+            return $http.get("internalapi/getlogs").success(function (data) {
+                $scope.log = $sce.trustAsHtml(data.log);
+            });
+        }
+
+        $scope.logPromise = getAndShowLog();
+
+        $scope.scrollToBottom = function () {
+            //$window.scrollTo(0, 1000000);
+            document.getElementById("logfile").scrollTop = 10000000;
+            document.getElementById("logfile").scrollTop = 10000001;
+            console.log("Scrolling to bottom");
+        };
+
+        function startUpdateLogInterval() {
+            $scope.tailInterval = $interval(function () {
+                getAndShowLog();
+                if ($scope.doTailLog) {
+                    $scope.scrollToBottom();
+                }
+            }, 5000);
+        }
+
+        $scope.toggleUpdate = function() {
+            if ($scope.doUpdateLog) {
+                startUpdateLogInterval();
+            } else if ($scope.tailInterval != null) {
+                console.log("Cancelling");
+                $interval.cancel($scope.tailInterval);
+                localStorageService.set("doTailLog", false);
+                $scope.doTailLog = false;
+            }
+            localStorageService.set("doUpdateLog", $scope.doUpdateLog);
+        };
+
+        $scope.toggleTailLog = function () {
+            localStorageService.set("doTailLog", $scope.doTailLog);
+        };
+
+        if ($scope.doUpdateLog) {
+          startUpdateLogInterval();
+        }
 
     }
 }
@@ -1705,24 +1755,21 @@ function StatsService($http) {
         });
     }
 
-    function getSearchHistory(pageNumber, limit, type) {
+    function getSearchHistory(pageNumber, limit, sortModel, filterModel) {
         if (angular.isUndefined(pageNumber)) {
             pageNumber = 1;
         }
         if (angular.isUndefined(limit)) {
             limit = 100;
         }
-        if (angular.isUndefined(type)) {
-            type = "All";
-        }
-        return $http.get("internalapi/getsearchrequests", {params: {page: pageNumber, limit: limit, type: type}}).success(function (response) {
+        return $http.post("internalapi/getsearchrequests", {page: pageNumber, limit: limit, sortModel: sortModel, filterModel: filterModel}).success(function (response) {
             return {
                 searchRequests: response.searchRequests,
                 totalRequests: response.totalRequests
             }
         });
     }
-    
+
     function getDownloadHistory(pageNumber, limit, type) {
         if (angular.isUndefined(pageNumber)) {
             pageNumber = 1;
@@ -2430,7 +2477,7 @@ angular
     .controller('SearchHistoryController', SearchHistoryController);
 
 
-function SearchHistoryController($scope, $state, StatsService, history, $sce, $filter) {
+function SearchHistoryController($scope, $state, StatsService, history, $filter) {
     $scope.type = "All";
     $scope.limit = 100;
     $scope.pagination = {
@@ -2439,6 +2486,85 @@ function SearchHistoryController($scope, $state, StatsService, history, $sce, $f
     $scope.isLoaded = true;
     $scope.searchRequests = history.data.searchRequests;
     $scope.totalRequests = history.data.totalRequests;
+
+    var columnDefs = [
+        {
+            headerName: "Date",
+            field: "time",
+            sort: "desc",
+            cellRenderer: function (date) {
+                return moment.utc(date.value, "ddd, D MMM YYYY HH:mm:ss z").local().format("YYYY-MM-DD HH:mm")
+            },
+            filterParams: {apply: true},
+            width: 150,
+            suppressSizeToFit: true
+        },
+        {
+            headerName: "Query",
+            field: "query",
+            filterParams: {apply: true, newRowsAction: "keep"}
+        },
+        {
+            headerName: "Category",
+            field: "category",
+            filterParams: {apply: true, newRowsAction: "keep"},
+            width: 110,
+            suppressSizeToFit: true
+        },
+        {
+            headerName: "Additional parameters",
+            field: "additional",
+            filterParams: {apply: true, newRowsAction: "keep"},
+            cellRenderer: function (params) {
+                return _formatAdditional(params.data);
+            },
+            suppressSorting: true
+        },
+        {
+            headerName: "Access",
+            field: "internal",
+            filterParams: {apply: true, newRowsAction: "keep"},
+            cellRenderer: function (data) {
+                return data.value ? "Internal" : "API";
+            },
+            width: 100,
+            suppressSizeToFit: true
+        },
+        {
+            headerName: "Username",
+            field: "username",
+            filterParams: {apply: true, newRowsAction: "keep"},
+        }
+    ];
+
+
+    $scope.gridOptions = {
+        columnDefs: columnDefs,
+        rowModelType: "pagination",
+        debug: false,
+        enableColResize: true,
+        enableServerSideSorting: true,
+        enableServerSideFilter: true,
+        paginationPageSize: 500,
+        suppressRowClickSelection: true,
+        datasource: {
+            getRows: function (params) {
+                var page = Math.floor(params.startRow / 500) + 1;
+                var limit = params.endRow - params.startRow;
+                console.log(params);
+                StatsService.getSearchHistory(page, limit, params.sortModel, params.filterModel).then(function (history) {
+                    // $scope.searchRequests = history.data.searchRequests;
+                    // $scope.totalRequests = history.data.totalRequests;
+                    // $scope.isLoaded = true;
+                    params.successCallback(history.data.searchRequests, history.data.totalRequests);
+                    $scope.gridOptions.api.sizeColumnsToFit();
+                    $scope.gridOptions.api.sizeColumnsToFit();
+                });
+
+            }
+        }
+    };
+
 
     $scope.pageChanged = function (newPage) {
         getSearchRequestsPage(newPage);
@@ -2516,7 +2642,9 @@ function SearchHistoryController($scope, $state, StatsService, history, $sce, $f
         return request.query;
     };
 
-    $scope.formatAdditional = function(request) {
+    $scope.formatAdditional = _formatAdditional;
+
+    function _formatAdditional(request) {
         var result = [];
         //ID key: ID value
         //season
@@ -2529,7 +2657,7 @@ function SearchHistoryController($scope, $state, StatsService, history, $sce, $f
             if (request.identifier_key == "imdbid") {
                 key = "IMDB ID";
                 href = "https://www.imdb.com/title/tt"
-            } else  if (request.identifier_key == "tvdbid") {
+            } else if (request.identifier_key == "tvdbid") {
                 key = "TVDB ID";
                 href = "https://thetvdb.com/?tab=series&id="
             } else if (request.identifier_key == "rid") {
@@ -2555,12 +2683,12 @@ function SearchHistoryController($scope, $state, StatsService, history, $sce, $f
         if (request.title) {
             result.push("Title: " + request.title);
         }
-        return $sce.trustAsHtml(result.join(", "));
-    };
+        return result.join(", ");
+    }
 
 
 }
-SearchHistoryController.$inject = ["$scope", "$state", "StatsService", "history", "$sce", "$filter"];
+SearchHistoryController.$inject = ["$scope", "$state", "StatsService", "history", "$filter"];
 
 angular
     .module('nzbhydraApp')
@@ -3602,8 +3730,8 @@ angular
                     var url = "internalapi/test_caps";
                     var params = {indexer: $scope.model.name, apikey: $scope.model.apikey, host: $scope.model.host};
                     if (angular.isDefined($scope.model.username)) {
-                        settings["username"] = $scope.model.username;
-                        settings["password"] = $scope.model.password;
+                        params["username"] = $scope.model.username;
+                        params["password"] = $scope.model.password;
                     }
                     ConfigBoxService.checkCaps(url, params, $scope.model).then(function (data, model) {
                         angular.element(testMessage).text("Supports: " + data.supportedIds + "," ? data.supportedIds && data.supportedTypes : "" + data.supportedTypes);
@@ -3744,13 +3872,14 @@ angular
         formlyConfigProvider.setType({
             name: 'arrayConfig',
             templateUrl: 'arrayConfig.html',
-            controller: function ($scope, $uibModal) {
+            controller: function ($scope, $uibModal, growl) {
                 $scope.formOptions = {formState: $scope.formState};
                 $scope._showBox = _showBox;
                 $scope.showBox = showBox;
                 $scope.isInitial = false;
 
-                $scope.presets = $scope.options.data.presets;
+                $scope.presets = $scope.options.data.presets($scope.model);
+
 
                 function _showBox(model, parentModel, isInitial, callback) {
                     var modalInstance = $uibModal.open({
@@ -3794,18 +3923,23 @@ angular
                 }
 
                 $scope.addEntry = function (entriesCollection, preset) {
-                    var model = angular.copy($scope.options.data.defaultModel);
-                    if (angular.isDefined(preset)) {
-                        _.extend(model, preset);
+                    if ($scope.options.data.checkAddingAllowed(entriesCollection, preset)) {
+                        var model = angular.copy($scope.options.data.defaultModel);
+                        if (angular.isDefined(preset)) {
+                            _.extend(model, preset);
+                        }
+
+                        $scope.isInitial = true;
+
+                        $scope._showBox(model, entriesCollection, true, function (isSubmitted) {
+                            if (isSubmitted) {
+                                entriesCollection.push(model);
+                            }
+                        });
+                    } else {
+                        growl.error("That predefined indexer is already configured."); //For now this is the only case where adding is forbidden so we use this hardcoded message "for now"... (;-))
                     }
 
-                    $scope.isInitial = true;
-
-                    $scope._showBox(model, entriesCollection, true, function (isSubmitted) {
-                        if (isSubmitted) {
-                            entriesCollection.push(model);
-                        }
-                    });
                 };
 
             }
@@ -4582,6 +4716,60 @@ function ConfigFields($injector) {
                             }
                         },
                         {
+                            key: 'rolloverAtStart',
+                            type: 'horizontalSwitch',
+                            templateOptions: {
+                                label: 'Startup rollover',
+                                help: 'Starts a new log file on start/restart'
+                            },
+                            watcher: {
+                                listener: restartListener
+                            }
+                        },
+                        {
+                            key: 'logMaxSize',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'number',
+                                label: 'Max log file size',
+                                help: 'When log file size is reached a new one is started. Set to 0 to disable.',
+                                addonRight: {
+                                    text: 'kB'
+                                }
+                            },
+                            watcher: {
+                                listener: restartListener
+                            }
+                        },
+                        {
+                            key: 'logRotateAfterDays',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'number',
+                                label: 'Rotate after',
+                                help: 'A new log file is started after this many days. Supercedes max size. Keep empty to disable.',
+                                addonRight: {
+                                    text: 'days'
+                                }
+                            },
+                            watcher: {
+                                listener: restartListener
+                            }
+                        },
+                        {
+                            key: 'keepLogFiles',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'number',
+                                label: 'Keep log files',
+                                help: 'Number of log files to keep before oldest is deleted.'
+                            },
+                            watcher: {
+                                listener: restartListener
+                            }
+                        },
+
+                        {
                             key: 'consolelevel',
                             type: 'horizontalSelect',
                             templateOptions: {
@@ -4774,13 +4962,33 @@ function ConfigFields($injector) {
                             key: 'applyRestrictions',
                             type: 'horizontalSelect',
                             templateOptions: {
-                                label: 'Apply restrictions',
+                                label: 'Apply word restrictions',
                                 options: [
                                     {name: 'Internal searches', value: 'internal'},
                                     {name: 'API searches', value: 'external'},
                                     {name: 'All searches', value: 'both'}
                                 ],
                                 help: "For which type of search word restrictions will be applied"
+                            }
+                        },
+                        {
+                            key: 'forbiddenGroups',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'text',
+                                label: 'Forbidden groups',
+                                placeholder: 'separate, with, commas, like, this',
+                                help: 'Posts from any groups containing any of these words will be ignored'
+                            }
+                        },
+                        {
+                            key: 'forbiddenPosters',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'text',
+                                label: 'Forbidden posters',
+                                placeholder: 'separate, with, commas, like, this',
+                                help: 'Posts from any posters containing any of these words will be ignored'
                             }
                         },
                         {
@@ -4907,7 +5115,12 @@ function ConfigFields($injector) {
                             enabled: true
                         },
                         entryTemplateUrl: 'downloaderEntry.html',
-                        presets: getDownloaderPresets(),
+                        presets: function () {
+                            return getDownloaderPresets();
+                        },
+                        checkAddingAllowed: function () {
+                            return true;
+                        },
                         presetsOnly: true,
                         addNewText: 'Add new downloader',
                         fieldsFunction: getDownloaderBoxFields,
@@ -4955,14 +5168,26 @@ function ConfigFields($injector) {
                             accessType: "both",
                             search_ids: undefined, //["imdbid", "rid", "tvdbid"],
                             searchTypes: undefined, //["tvsearch", "movie"]
-                            backend: 'newznab'
+                            backend: 'newznab',
+                            userAgent: null
                         },
                         addNewText: 'Add new indexer',
                         entryTemplateUrl: 'indexerEntry.html',
-                        presets: getIndexerPresets(),
+                        presets: function (model) {
+                            return getIndexerPresets(model);
+                        },
+                        checkAddingAllowed: function (existingIndexers, preset) {
+                            if (!(preset.type == "anizb" || preset.type == "binsearch" || preset.type == "nzbindex" || preset.type == "nzbclub")) {
+                                return true;
+                            }
+                            return !_.any(existingIndexers, function (existingEntry) {
+                                return existingEntry.name == preset.name;
+                            });
+
+                        },
                         fieldsFunction: getIndexerBoxFields,
                         allowDeleteFunction: function (model) {
-                            return model.type == 'newznab' || model.type == 'jackett';
+                            return true;
                         },
                         checkBeforeClose: function (scope, model) {
                             var IndexerCheckBeforeCloseService = $injector.get("IndexerCheckBeforeCloseService");
@@ -5089,8 +5314,9 @@ function ConfigFields($injector) {
 ConfigFields.$inject = ["$injector"];
 
 
-function getIndexerPresets() {
-    return [
+function getIndexerPresets(configuredIndexers) {
+    console.log(configuredIndexers);
+    var presets = [
         [
             {
                 name: "6box",
@@ -5102,7 +5328,7 @@ function getIndexerPresets() {
             },
             {
                 name: "altHUB",
-                host: "https://althub.co.za"
+                host: "https://api.althub.co.za"
             },
             {
                 name: "DogNZB",
@@ -5199,6 +5425,10 @@ function getIndexerPresets() {
             {
                 name: "Tabula-Rasa",
                 host: "https://www.tabula-rasa.pw"
+            },
+            {
+                name: "Usenet-Crawler",
+                host: "https://www.usenet-crawler.com"
             }
         ],
         [
@@ -5210,8 +5440,88 @@ function getIndexerPresets() {
                 type: "jackett",
                 accessType: "internal"
             }
+        ],
+        [
+            {
+                accessType: "both",
+                categories: ["anime"],
+                enabled: false,
+                hitLimit: 0,
+                hitLimitResetTime: null,
+                host: "https://anizb.org",
+                name: "anizb",
+                password: null,
+                preselect: true,
+                score: 0,
+                search_ids: [],
+                searchTypes: [],
+                showOnSearch: true,
+                timeout: null,
+                type: "anizb",
+                username: null
+            },
+            {
+                accessType: "internal",
+                categories: [],
+                enabled: true,
+                hitLimit: 0,
+                hitLimitResetTime: null,
+                host: "https://binsearch.info",
+                name: "Binsearch",
+                password: null,
+                preselect: true,
+                score: 0,
+                search_ids: [],
+                searchTypes: [],
+                showOnSearch: true,
+                timeout: null,
+                type: "binsearch",
+                username: null
+            },
+            {
+                accessType: "internal",
+                categories: [],
+                enabled: true,
+                hitLimit: 0,
+                hitLimitResetTime: null,
+                host: "https://www.nzbclub.com",
+                name: "NZBClub",
+                password: null,
+                preselect: true,
+                score: 0,
+                search_ids: [],
+                searchTypes: [],
+                showOnSearch: true,
+                timeout: null,
+                type: "nzbclub",
+                username: null
+
+            },
+            {
+                accessType: "internal",
+                categories: [],
+                enabled: true,
+                generalMinSize: 1,
+                hitLimit: 0,
+                hitLimitResetTime: null,
+                host: "https://nzbindex.com",
+                name: "NZBIndex",
+                password: null,
+                preselect: true,
+                score: 0,
+                search_ids: [],
+                searchTypes: [],
+                showOnSearch: true,
+                timeout: null,
+                type: "nzbindex",
+                username: null
+
+            }
         ]
     ];
+
+
+    return presets;
 }
 
 function getIndexerBoxFields(model, parentModel, isInitial, injector) {
@@ -5384,25 +5694,37 @@ function getIndexerBoxFields(model, parentModel, isInitial, injector) {
                 }
             }
         )
-
     }
 
-
-    if (model.type != "womble") {
+    if (model.type == 'newznab') {
         fieldset.push(
             {
-                key: 'preselect',
-                type: 'horizontalSwitch',
-                hideExpression: 'model.accessType == "external"',
+                key: 'userAgent',
+                type: 'horizontalInput',
                 templateOptions: {
-                    type: 'switch',
-                    label: 'Preselect',
-                    help: 'Preselect this indexer on the search page'
+                    type: 'text',
+                    required: false,
+                    label: 'User agent',
+                    help: 'Rarely needed. Will supercede the one in the main searching settings'
                 }
             }
         )
     }
-    if (model.type != "womble" && model.type != "jackett") {
+
+
+    fieldset.push(
+        {
+            key: 'preselect',
+            type: 'horizontalSwitch',
+            hideExpression: 'model.accessType == "external"',
+            templateOptions: {
+                type: 'switch',
+                label: 'Preselect',
+                help: 'Preselect this indexer on the search page'
+            }
+        }
+    );
+    if (model.type != "jackett") {
         fieldset.push(
             {
                 key: 'accessType',
@@ -5418,7 +5740,7 @@ function getIndexerBoxFields(model, parentModel, isInitial, injector) {
             }
         );
     }
-    if (model.type != "womble" && model.type != "anizb") {
+    if (model.type != "anizb") {
         fieldset.push(
             {
                 key: 'categories',
@@ -5972,6 +6294,7 @@ function DownloaderCheckBeforeCloseService($q, ConfigBoxService, growl, ModalSer
 
 }
 DownloaderCheckBeforeCloseService.$inject = ["$q", "ConfigBoxService", "growl", "ModalService", "blockUI"];
+
 angular
     .module('nzbhydraApp')
     .factory('ConfigModel', function () {
