@@ -1,6 +1,11 @@
 # NZB Hydra changelog
 
 ----------
+### 0.2.189
+Changed: Improved auth handling a bit
+
+Fixed: If a user is logged in only show his searches in the search history on the search page. See [#519](https://github.com/theotherp/nzbhydra/issues/519).
+
 ### 0.2.188
 Fixed: Show distinct queries in search history on search page. See [#515](https://github.com/theotherp/nzbhydra/issues/515).
 
