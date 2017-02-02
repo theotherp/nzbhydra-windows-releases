@@ -20,6 +20,10 @@ if %errorlevel% neq 0 goto failure
 echo Setting service folder
 call "%~dp0nssm.exe" set NzbHydra AppDirectory "%~dp0.."
 if %errorlevel% neq 0 goto failure
+echo Enter your username like this: ".\username" 
+set /p username="Username:"
+set /p password="Enter your windows password:"
+call "%~dp0nssm.exe" set NzbHydra ObjectName %username% %password%
 echo Service installed successfully. Starting service...
 call "%~dp0nssm.exe" start NzbHydra
 pause
