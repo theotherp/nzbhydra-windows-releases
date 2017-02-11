@@ -4,7 +4,7 @@
     <div class="col-md-10" style="padding-right: 0px">
         <!-- TODO: Make box smaller if no error messages exist-->
         <uib-accordion close-others="oneAtATime">
-            <uib-accordion-group panel-class="panel-indexer-statuses" is-open="foo.indexerStatusesExpanded" is-disabled="true" class="">
+            <div uib-accordion-group panel-class="panel-indexer-statuses" is-open="foo.indexerStatusesExpanded" is-disabled="true" class="">
                 <uib-accordion-heading>
                     <span class="indexer-statuses-accordion">
                         <span ng-click="toggleIndexerStatuses()">Indexer statuses</span><span ng-if="countRejected > 0"> / Rejected results</span> <i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': foo.indexerStatusesExpanded, 'glyphicon-chevron-right': !foo.indexerStatusesExpanded}" ng-click="toggleIndexerStatuses()"></i>
@@ -103,10 +103,11 @@
                     </tr>
                     </tbody>
                 </table>
-            </uib-accordion-group>
+            </div>
         </uib-accordion>
     </div>
 </div>
+
 
 <div class="row" ng-if="indexersearches" style="margin-top: 30px">
     <div class="col-md-6" style="text-align: left;">
@@ -122,13 +123,21 @@
         <span class="badge">Loaded {{ resultsCount }} of {{ total }} results (rejected {{ countRejected }})</span>
 
         <div class="btn-group" style="margin-top:20px; margin-bottom:20px;">
-            <button type="button" ng-click="loadMore(false)" class="btn btn-default" ng-disabled="resultsCount >= total">Load more</button>
+            <button type="button" ng-click="loadMore(false)" class="btn btn-default" ng-disabled="resultsCount >= total"
+                    uib-tooltip="Click to load more results from the indexers"
+                    tooltip-placement="top"
+                    tooltip-trigger="mouseenter"
+            >Load more</button>
             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" ng-disabled="resultsCount >= total">
                 <span class="caret"></span>
                 <span class="sr-only">Toggle Dropdown</span>
             </button>
             <ul class="dropdown-menu">
-                <li><a href="#" ng-click="loadMore(true)">Load all results</a></li>
+                <li><a href="#" ng-click="loadMore(true)"
+                       uib-tooltip="Click to load all of the results from the indexers. May take a while and a lot of API requests..."
+                       tooltip-placement="top"
+                       tooltip-trigger="mouseenter"
+                >Load all results</a></li>
             </ul>
         </div>
     </div>
