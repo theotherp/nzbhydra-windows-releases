@@ -4968,7 +4968,7 @@ function ConfigFields($injector) {
                                 type: 'text',
                                 label: 'Host',
                                 required: true,
-                                placeholder: 'IPv4 address to bind to',
+                                placeholder: 'IPv4/6 address to bind to',
                                 help: 'I strongly recommend using a reverse proxy instead of exposing this directly. Requires restart.'
                             },
                             validators: {
@@ -5577,6 +5577,14 @@ function ConfigFields($injector) {
                                 type: 'switch',
                                 label: 'Remove language from newznab titles',
                                 help: 'Some indexers add the language to the result title, preventing proper duplicate detection'
+                            }
+                        },
+                        {
+                            key: 'removeObfuscated',
+                            type: 'horizontalSwitch',
+                            templateOptions: {
+                                type: 'switch',
+                                label: 'Remove "obfuscated" from nzbgeek titles'
                             }
                         },
                         {
