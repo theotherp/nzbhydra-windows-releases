@@ -928,7 +928,7 @@ angular
     .directive('otherColumns', otherColumns);
 
 function otherColumns($http, $templateCache, $compile, $window) {
-    controller.$inject = ["$scope", "$http", "$uibModal", "growl"];
+    controller.$inject = ["$scope", "$http", "$uibModal", "growl", "HydraAuthService"];
     return {
         scope: {
             result: "<"
@@ -944,8 +944,10 @@ function otherColumns($http, $templateCache, $compile, $window) {
         controller: controller
     };
 
-    function controller($scope, $http, $uibModal, growl) {
-        
+    function controller($scope, $http, $uibModal, growl, HydraAuthService) {
+
+        $scope.showDetailsDl = HydraAuthService.getUserInfos().maySeeDetailsDl;
+
         $scope.showNfo = showNfo;
         function showNfo(resultItem) {
             if (resultItem.has_nfo == 0) {
@@ -1282,6 +1284,47 @@ function duplicateGroup() {
 
 
 }
+angular
+    .module('nzbhydraApp')
+    .directive('downloadNzbzipButton', downloadNzbzipButton);
+
+function downloadNzbzipButton() {
+    controller.$inject = ["$scope", "growl", "FileDownloadService"];
+    return {
+        templateUrl: 'static/html/directives/download-nzbzip-button.html',
+        require: ['^searchResults'],
+        scope: {
+            searchResults: "<",
+            searchTitle: "<"
+        },
+        controller: controller
+    };
+
+    function controller($scope, growl, FileDownloadService) {
+
+        $scope.download = function () {
+            if (angular.isUndefined($scope.searchResults) || $scope.searchResults.length == 0) {
+                growl.info("You should select at least one result...");
+            } else {
+
+                var values = _.map($scope.searchResults, function (value) {
+                    return value.searchResultId;
+                });
+                var link = "getnzbzip?searchresultids=" + values.join("|");
+                var searchTitle;
+                if (angular.isDefined($scope.searchTitle)) {
+                    searchTitle = " for " + $scope.searchTitle;
+                } else {
+                    searchTitle = "";
+                }
+                var filename = "NZBHydra NZBs" + searchTitle + ".zip";
+                FileDownloadService.downloadFile(link, filename);
+            }
+        }
+    }
+}
+
+
 angular
     .module('nzbhydraApp')
     .directive('downloadNzbsButton', downloadNzbsButton);
@@ -1655,13 +1698,13 @@ angular
     .directive('hydrabackup', hydrabackup);
 
 function hydrabackup() {
-    controller.$inject = ["$scope", "BackupService", "Upload", "RequestsErrorHandler", "growl", "RestartService", "$http"];
+    controller.$inject = ["$scope", "BackupService", "Upload", "FileDownloadService", "RequestsErrorHandler", "growl", "RestartService"];
     return {
         templateUrl: 'static/html/directives/backup.html',
         controller: controller
     };
 
-    function controller($scope, BackupService, Upload, RequestsErrorHandler, growl, RestartService, $http) {
+    function controller($scope, BackupService, Upload, FileDownloadService, RequestsErrorHandler, growl, RestartService) {
         $scope.refreshBackupList = function () {
             BackupService.getBackupsList().then(function (backups) {
                 $scope.backups = backups;
@@ -1674,21 +1717,7 @@ function hydrabackup() {
 
 
         $scope.createAndDownloadBackupFile = function() {
-
-                $http({method: 'GET', url: 'internalapi/getbackup', responseType: 'arraybuffer'}).success(function (data, status, headers, config) {
-                    var a = document.createElement('a');
-                    var blob = new Blob([data], {'type': "application/octet-stream"});
-                    a.href = URL.createObjectURL(blob);
-                    a.download = "nzbhydra-backup-" + moment().format("YYYY-MM-DD-HH-mm") + ".zip";
-
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    $scope.refreshBackupList();
-                }).error(function (data, status, headers, config) {
-                    console.log("Error:" + status);
-                });
-
+            FileDownloadService.downloadFile("internalapi/getbackup", "nzbhydra-backup-" + moment().format("YYYY-MM-DD-HH-mm") + ".zip");
         };
 
         $scope.uploadBackupFile = function (file, errFiles) {
@@ -2511,6 +2540,18 @@ function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, gr
     $scope.indexerResultsInfo = {}; //Stores information about the indexer's results like how many we already retrieved
     $scope.groupExpanded = {};
     $scope.selected = [];
+    if ($stateParams.title) {
+        $scope.searchTitle = $stateParams.title;
+    } else if ($stateParams.query) {
+        $scope.searchTitle = $stateParams.query;
+    } else {
+        $scope.searchTitle = undefined;
+    }
+
+    $scope.selectedIds = _.map($scope.selected, function (value) {
+        return value.searchResultId;
+    });
+
     $scope.lastClicked = null;
     $scope.lastClickedValue = null;
 
@@ -2761,7 +2802,7 @@ function SearchResultsController($stateParams, $scope, $q, $timeout, blockUI, gr
         }
         $scope.lastClicked = rowIndex;
         $scope.lastClickedValue = newCheckedValue;
-    })
+    });
 
     $scope.filterRejectedZero = function() {
         return function (entry) {
@@ -3093,7 +3134,7 @@ angular
     .module('nzbhydraApp')
     .controller('SearchController', SearchController);
 
-function SearchController($scope, $http, $stateParams, $state, $window, $filter, $sce, growl, SearchService, focus, ConfigService, CategoriesService, blockUI, $element, ModalService, SearchHistoryService) {
+function SearchController($scope, $http, $stateParams, $state, $window, $filter, $sce, growl, SearchService, focus, ConfigService, HydraAuthService, CategoriesService, blockUI, $element, ModalService, SearchHistoryService) {
 
     function getNumberOrUndefined(number) {
         if (_.isUndefined(number) || _.isNaN(number) || number == "") {
@@ -3142,6 +3183,7 @@ function SearchController($scope, $http, $stateParams, $state, $window, $filter,
     $scope.searchHistory = [];
 
     var safeConfig = ConfigService.getSafe();
+    $scope.showIndexerSelection = HydraAuthService.getUserInfos().showIndexerSelection;
 
     //Doesn't belong here but whatever
     var firstStartThreeDaysAgo = ConfigService.getSafe().firstStart < moment().subtract(3, "days").unix();
@@ -3424,7 +3466,7 @@ function SearchController($scope, $http, $stateParams, $state, $window, $filter,
 
 
 }
-SearchController.$inject = ["$scope", "$http", "$stateParams", "$state", "$window", "$filter", "$sce", "growl", "SearchService", "focus", "ConfigService", "CategoriesService", "blockUI", "$element", "ModalService", "SearchHistoryService"];
+SearchController.$inject = ["$scope", "$http", "$stateParams", "$state", "$window", "$filter", "$sce", "growl", "SearchService", "focus", "ConfigService", "HydraAuthService", "CategoriesService", "blockUI", "$element", "ModalService", "SearchHistoryService"];
 
 angular
     .module('nzbhydraApp')
@@ -3782,7 +3824,7 @@ angular
     .module('nzbhydraApp')
     .factory('HydraAuthService', HydraAuthService);
 
-function HydraAuthService($q, $rootScope, $http, $cookies, bootstrapped) {
+function HydraAuthService($q, $rootScope, $http, bootstrapped) {
 
     var loggedIn = bootstrapped.username;
 
@@ -3862,12 +3904,12 @@ function HydraAuthService($q, $rootScope, $http, $cookies, bootstrapped) {
     
    
 }
-HydraAuthService.$inject = ["$q", "$rootScope", "$http", "$cookies", "bootstrapped"];
+HydraAuthService.$inject = ["$q", "$rootScope", "$http", "bootstrapped"];
 angular
     .module('nzbhydraApp')
     .controller('HeaderController', HeaderController);
 
-function HeaderController($scope, $state, $http, growl, HydraAuthService) {
+function HeaderController($scope, $state, growl, HydraAuthService) {
 
 
     $scope.showLoginout = false;
@@ -3944,7 +3986,7 @@ function HeaderController($scope, $state, $http, growl, HydraAuthService) {
         }
     }
 }
-HeaderController.$inject = ["$scope", "$state", "$http", "growl", "HydraAuthService"];
+HeaderController.$inject = ["$scope", "$state", "growl", "HydraAuthService"];
 
 var HEADER_NAME = 'MyApp-Handle-Errors-Generically';
 var specificallyHandleInProgress = false;
@@ -4525,6 +4567,39 @@ filters.filter('unsafe',
 		};
 	}]
 );
+
+
+angular
+    .module('nzbhydraApp')
+    .factory('FileDownloadService', FileDownloadService);
+
+function FileDownloadService($http, growl ) {
+
+    var service = {
+        downloadFile: downloadFile
+    };
+
+    return service;
+    
+    function downloadFile(link, filename) {
+        $http({method: 'GET', url: link, responseType: 'arraybuffer'}).success(function (data, status, headers, config) {
+            var a = document.createElement('a');
+            var blob = new Blob([data], {'type': "application/octet-stream"});
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }).error(function (data, status, headers, config) {
+            growl.error(status);
+        });
+
+    }
+    
+
+}
+FileDownloadService.$inject = ["$http", "growl"];
 
 
 angular
@@ -5507,6 +5582,15 @@ function ConfigFields($injector) {
                             }
                         },
                         {
+                            key: 'idFallbackToTitlePerIndexer',
+                            type: 'horizontalSwitch',
+                            templateOptions: {
+                                type: 'switch',
+                                label: 'Fallback per indexer',
+                                help: "If enabled, fallback will occur on a per-indexer basis"
+                            }
+                        },
+                        {
                             key: 'userAgent',
                             type: 'horizontalInput',
                             templateOptions: {
@@ -5755,6 +5839,30 @@ function ConfigFields($injector) {
                     }
                 },
                 {
+                    key: 'restrictDetailsDl',
+                    type: 'horizontalSwitch',
+                    templateOptions: {
+                        type: 'switch',
+                        label: 'Restrict NZB details & DL',
+                        help: 'Restrict NZB details, comments and download links'
+                    },
+                    hideExpression: function () {
+                        return rootModel.auth.authType == "none";
+                    }
+                },
+                {
+                    key: 'restrictIndexerSelection',
+                    type: 'horizontalSwitch',
+                    templateOptions: {
+                        type: 'switch',
+                        label: 'Restrict indexer selection box',
+                        help: 'Restrict visibility of indexer selection box in search. Affects only GUI'
+                    },
+                    hideExpression: function () {
+                        return rootModel.auth.authType == "none";
+                    }
+                },
+                {
                     key: 'rememberUsers',
                     type: 'horizontalSwitch',
                     templateOptions: {
@@ -5807,6 +5915,24 @@ function ConfigFields($injector) {
                                 templateOptions: {
                                     type: 'switch',
                                     label: 'May see stats'
+                                },
+                                hideExpression: 'model.maySeeAdmin'
+                            },
+                            {
+                                key: 'maySeeDetailsDl',
+                                type: 'horizontalSwitch',
+                                templateOptions: {
+                                    type: 'switch',
+                                    label: 'May see NZB details & DL links'
+                                },
+                                hideExpression: 'model.maySeeAdmin'
+                            },
+                            {
+                                key: 'showIndexerSelection',
+                                type: 'horizontalSwitch',
+                                templateOptions: {
+                                    type: 'switch',
+                                    label: 'May see indexer selection box'
                                 },
                                 hideExpression: 'model.maySeeAdmin'
                             }
