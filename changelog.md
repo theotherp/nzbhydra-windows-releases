@@ -1,6 +1,18 @@
 # NZB Hydra changelog
 
 ----------
+### 0.2.214
+Fixed: Connection check with SABnzbd 2.x would still fail...
+
+### 0.2.213
+Fixed: Windows service would not start with Windows 10 Creator's Update. If you're affected you'll need to uninstall the service and install it again. See [#530](https://github.com/theotherp/nzbhydra/issues/530).
+
+### 0.2.212
+Fixed: Connection check with SABnzbd 2.0RC3 would fail.
+
+### 0.2.211
+Changed: Log error when SSL could not be imported instead of exception. See [#576](https://github.com/theotherp/nzbhydra/issues/576). 
+
 ### 0.2.210
 Fixed: Search history empty. See [#574](https://github.com/theotherp/nzbhydra/issues/574).
 
