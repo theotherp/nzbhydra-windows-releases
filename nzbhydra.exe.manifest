@@ -3,7 +3,7 @@
   <assemblyIdentity name="nzbhydra" processorArchitecture="x86" type="win32" version="1.0.0.0"/>
   <dependency>
     <dependentAssembly>
-      <assemblyIdentity name="Microsoft.VC90.CRT" processorArchitecture="x86" publicKeyToken="1fc8b3b9a1e18e3b" type="win32" version="9.0.30729.9247"/>
+      <assemblyIdentity name="Microsoft.VC90.CRT" processorArchitecture="x86" publicKeyToken="1fc8b3b9a1e18e3b" type="win32" version="9.0.30729.9279"/>
       <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1"/>
     </dependentAssembly>
   </dependency>
