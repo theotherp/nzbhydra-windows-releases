@@ -1,8 +1,24 @@
 # NZB Hydra changelog
 
 ----------
+### 0.2.220
+Changed: I updated the database library and changed the handling again. This will hopefully solve some issues that some users still had but might impact performance. I haven't found a satisfactory solution yet. 
+Please let me know if you experience any problems.
+
+Added: Config option to define trailing words which will be removed from titles. Similar to "Obfuscated" and for languages, now it's just generic. Thanks to judhat2 for the list. See [#604](https://github.com/theotherp/nzbhydra/issues/604).
+
+Added: SSL certificates will be verified by default. See [#624](https://github.com/theotherp/nzbhydra/pull/624)
+
+Added: Option to provide an SSL CA file. See [#623](https://github.com/theotherp/nzbhydra/issues/623).
+
+Fixed: Don't convert required/forbidden regex to lowercase. See [#616](https://github.com/theotherp/nzbhydra/issues/616).
+
+Fixed: API key generation from GUI contained many zeroes when called from Chrome. See [#619](https://github.com/theotherp/nzbhydra/issues/619).
+
 ### 0.2.219
 Fixed: Use two concurrent connections when checking indexer capabilities. See [#606](https://github.com/theotherp/nzbhydra/issues/606).
+
+Fixed: Allow nonnummeric episodes for internal TV search.. See [#607](https://github.com/theotherp/nzbhydra/issues/607).
 
 ### 0.2.218
 Fixed: Previous versions were not compatible with Windows versions previous to 10... So much stuff to be careful about. See [#602](https://github.com/theotherp/nzbhydra/issues/602).

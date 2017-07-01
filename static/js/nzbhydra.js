@@ -4175,7 +4175,11 @@ angular
             ].join(' '),
             controller: function ($scope) {
                 $scope.generate = function () {
-                    $scope.model[$scope.options.key] = (Math.random() * 1e32).toString(36);
+                    var result = "";
+                    var length = 24;
+                    var chars = "0123456789abcdefghijklmnopqrstuvwxyz";
+                    for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
+                    $scope.model[$scope.options.key] = result;
                 }
             }
         });
@@ -4925,7 +4929,7 @@ function ConfigFields($injector) {
                             templateOptions: {
                                 type: 'text',
                                 label: 'Required regex',
-                                help: 'Must be present in a title (case insensitive)'
+                                help: 'Must be present in a title (which is converted to lowercase before)'
                             }
                         },
                         {
@@ -4943,7 +4947,7 @@ function ConfigFields($injector) {
                             templateOptions: {
                                 type: 'text',
                                 label: 'Forbidden regex',
-                                help: 'Must not be present in a title (case insensitive)'
+                                help: 'Must not be present in a title (which is converted to lowercase before)'
                             }
                         },
                         {
@@ -5107,18 +5111,6 @@ function ConfigFields($injector) {
                             }
                         },
                         {
-                            key: 'ssl',
-                            type: 'horizontalSwitch',
-                            templateOptions: {
-                                type: 'switch',
-                                label: 'Use SSL',
-                                help: 'I recommend using a reverse proxy instead of this. Requires restart.'
-                            },
-                            watcher: {
-                                listener: restartListener
-                            }
-                        },
-                        {
                             key: 'socksProxy',
                             type: 'horizontalInput',
                             templateOptions: {
@@ -5158,6 +5150,18 @@ function ConfigFields($injector) {
                             }
                         },
                         {
+                            key: 'ssl',
+                            type: 'horizontalSwitch',
+                            templateOptions: {
+                                type: 'switch',
+                                label: 'Use SSL',
+                                help: 'I recommend using a reverse proxy instead of this. Requires restart.'
+                            },
+                            watcher: {
+                                listener: restartListener
+                            }
+                        },
+                        {
                             key: 'sslcert',
                             hideExpression: '!model.ssl',
                             type: 'horizontalInput',
@@ -5184,7 +5188,21 @@ function ConfigFields($injector) {
                             watcher: {
                                 listener: restartListener
                             }
+                        },
+                        {
+                            key: 'sslca',
+                            hideExpression: '!model.ssl',
+                            type: 'horizontalInput',
+                            templateOptions: {
+                                type: 'text',
+                                label: 'SSL intermediate certificate (CA file)',
+                                help: 'Requires restart.'
+                            },
+                            watcher: {
+                                listener: restartListener
+                            }
                         }
+
 
                     ]
                 },
@@ -5232,6 +5250,14 @@ function ConfigFields($injector) {
                                 type: 'text',
                                 label: 'Dereferer',
                                 help: 'Redirect external links to hide your instance. Insert $s for target URL. Delete to disable.'
+                            }
+                        },
+                        {
+                            key: 'verifySsl',
+                            type: 'horizontalSwitch',
+                            templateOptions: {
+                                label: 'Verify SSL certificates',
+                                help: 'If enabled only valid/known SSL certificates will be accepted when accessing indexers'
                             }
                         }
                     ]
@@ -5493,7 +5519,7 @@ function ConfigFields($injector) {
                             templateOptions: {
                                 type: 'text',
                                 label: 'Forbidden regex',
-                                help: 'Must not be present in a title (case insensitive)'
+                                help: 'Must not be present in a title (which is converted to lowercase before)'
                             }
                         },
                         {
@@ -5512,7 +5538,7 @@ function ConfigFields($injector) {
                             templateOptions: {
                                 type: 'text',
                                 label: 'Required regex',
-                                help: 'Must be present in a title (case insensitive)'
+                                help: 'Must be present in a title (which is converted to lowercase before)'
                             }
                         },
                         {
@@ -5658,20 +5684,12 @@ function ConfigFields($injector) {
                             }
                         },
                         {
-                            key: 'removeLanguage',
-                            type: 'horizontalSwitch',
+                            key: 'removeTrailing',
+                            type: 'horizontalInput',
                             templateOptions: {
-                                type: 'switch',
-                                label: 'Remove language from newznab titles',
-                                help: 'Some indexers add the language to the result title, preventing proper duplicate detection'
-                            }
-                        },
-                        {
-                            key: 'removeObfuscated',
-                            type: 'horizontalSwitch',
-                            templateOptions: {
-                                type: 'switch',
-                                label: 'Remove "obfuscated" from nzbgeek titles'
+                                type: 'text',
+                                label: 'Remove trailing...',
+                                help: 'Removed from title if it ends with either of these. Case insensitive and disregards leading/trailing spaces'
                             }
                         },
                         {
