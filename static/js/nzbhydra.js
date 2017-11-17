@@ -1108,6 +1108,15 @@ function hydralog() {
           startUpdateLogInterval();
         }
 
+        $scope.$on(
+            "$destroy",
+            function () {
+                if ($scope.tailInterval !== null) {
+                    $interval.cancel($scope.tailInterval);
+                }
+            }
+        );
+
     }
 }
 
@@ -5913,6 +5922,18 @@ function ConfigFields($injector) {
                     },
                     hideExpression: function () {
                         return rootModel.auth.authType == "none";
+                    }
+                },
+                {
+                    key: 'rememberUsersExpiry',
+                    type: 'horizontalInput',
+                    templateOptions: {
+                        type: 'number',
+                        label: 'Cookie expiry',
+                        help: 'How long users are remembered',
+                        addonRight: {
+                            text: 'days'
+                        }
                     }
                 },
                 {

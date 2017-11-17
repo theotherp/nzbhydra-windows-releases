@@ -1,6 +1,12 @@
 # NZB Hydra changelog
 
 ----------
+### 0.2.230
+Added: Option to define expiry of remember-me cookie. See [#676](https://github.com/theotherp/nzbhydra/issues/676).
+
+### 0.2.229
+Fixed: Log update would be executed even after leaving log page. See [#677](https://github.com/theotherp/nzbhydra/issues/677).
+
 ### 0.2.228
 Changed: Properly report when API hit limit reached at omgwtfnzbs.org.
 
